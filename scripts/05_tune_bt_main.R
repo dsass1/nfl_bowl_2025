@@ -4,6 +4,7 @@ library(tidymodels)
 library(xgboost)
 library(vip)
 library(doParallel)
+library(here)
 
 set.seed(1234)
 
@@ -15,8 +16,8 @@ tidymodels_prefer()
 registerDoParallel(cores = 8)
 
 # load data
-load("recipes/recipe_main.rda")
-load("recipes/split_down.rda")
+load(here("recipes/recipe_main.rda"))
+load(here("recipes/split_down.rda"))
 
 # model -------------------------------------------------------------------
 
@@ -44,4 +45,4 @@ tuned_bt_main <- bt_workflow |>
             control = control_grid(save_workflow = TRUE))
 
 save(tuned_bt_main, 
-     file = "results/tuned_bt_main.rda")
+     file = here("results/tuned_bt_main.rda"))

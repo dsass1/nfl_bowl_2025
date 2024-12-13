@@ -1,16 +1,14 @@
 
 library(tidyverse)
 library(tidymodels)
-library(xgboost)
-library(vip)
-library(doParallel)
 library(themis)
+library(here)
 
 # handle common conflicts
 tidymodels_prefer()
 
 # load data
-run_plays_final <- read_rds("data/run_plays_final.rds")
+run_plays_final <- read_rds(here("data/run_plays_final.rds") )
 
 # no missing issues
 naniar::miss_var_summary(run_plays_final)
@@ -36,9 +34,7 @@ test <- run_plays_final |>
   filter(week > 6)
 
 save(train_down, test, folds, 
-     file = "recipes/split_down.rda")
-
-#load("data/split_1.rda")
+     file = here("recipes/split_down.rda") )
 
 # recipe ------------------------------------------------------------------
 recipe_main <- recipe(rush_loc_calc ~ .,
@@ -59,7 +55,7 @@ check <- prep(recipe_main) |>
   bake(new_data = NULL)
 
 save(recipe_main, 
-     file = "recipes/recipe_main.rda")
+     file = here("recipes/recipe_main.rda") )
 ################################################################
 ################################################################
 ################################################################
@@ -85,4 +81,4 @@ check <- prep(recipe_base) |>
   bake(new_data = NULL)
 
 save(recipe_base, 
-     file = "recipes/recipe_base.rda")
+     file = here("recipes/recipe_base.rda"))
