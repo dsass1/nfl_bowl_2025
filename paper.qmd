@@ -1,0 +1,170 @@
+---
+title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
+author: "Danielle Sass"
+
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    embed-resources: true
+    code-fold: false
+    link-external-newwindow: true
+
+execute:
+  message: false
+  warning: false
+  echo: false
+  
+from: markdown+emoji
+reference-location: margin
+citation-location: margin
+---
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(gt)
+library(gtExtras)
+library(yardstick)
+library(here)
+
+load(here("results/bt_results_main.rda"))
+results <- read_rds(here("results/results.rds"))
+run_gap_table <- read_csv("images/run_gap_table.csv")
+vi_table <- read_rds("results/vi_table.rds")
+```
+
+## Introduction
+
+In football, an offensive play typically involves either a pass or a rush. For a defensive team, accurately predicting the type of play offers a significant strategic advantage. For instance, anticipating a rush allows the defense to position more players in the box, while expecting a pass might prompt defenders to drop back into coverage. Prior research has demonstrated that distinguishing between pass and rush plays can be achieved with 75-80% accuracy using a limited set of variables (cite sources). Building on this foundation, our study focuses on enhancing the defensive advantage by predicting the direction of a rush; categorized as left, middle, or right. Additionally, we aim to identify the key variables that may serve as indicators of rush direction, offering deeper insights into offensive tendencies. [~120 words]
+
+## Data preparation
+
+In order to predict rush direction we will use tracking, play by play, player, and game data from the 2022 season provided by the NFL Big Data Bowl 2025 (reference) along with data from the `nflverse` (reference). Our analysis focuses on only rush plays, which provides a total of 6,183 observations. While typically scramble plays are considered rush plays, these observations were omitted from our analysis since we are only using *pre-snap* information and scrambles are intended pass plays that became a rush *after* the ball was snapped.
+
+
+### Rush direction
+
+Upon visualizing a few plays we observed discrepancies between the tracking data and the provided rush location type. Due to the limited information on how rush direction was calculated and in order to ensure prediction accuracy, we manually calculated the rush direction using the tracking data. At it's simplest definition `rush direction` is classified as either "left", "middle", or "right" depending if the ball carrier advanced past the left most offensive lineman on the **left**, the right most offensive lineman on the **right**, or in the **middle** of those two outside lineman. @fig-run demonstrates the ball carrier rushing to the left of the left most offensive lineman (this play was classified as "inside-left", in other words "middle", in the data provided).
+In the more complicated scenario that the ball carrier does not advance past the lineman or does not cross the line of play then we use the outside lineman's coordinates at line-set to determine if the rusher moved to the left, right, or middle of the lineman.
+
+```{r}
+#| label: "fig-run"
+#| fig.cap: "caption here"
+
+knitr::include_graphics("images/01_run_definition.gif")
+```
+
+
+### Spatial variables {#sec-spatial-var}
+
+Pre-snap data was utilized in building the predictive model.
+When a player is rushing they are looking for a gap or hole to run through created by their team. We want to explore if pre-snap player orientation provides insight into a potential gap creation which could indicate where the rusher plans to go. 
+
+
+
+#### Sequential Offensive Player Gap 
+
+The second gap quantification utilizes both the offensive and defensive players. Assuming the offense and defensive players near the line of scrimmage are on the same yardline, each player takes one step forward based on their orientation such that all players are in a single line. If two offensive players are in a row with no defenders between them a gap is formed. Again, we calculate the distance between these offensive players and whether this gap is on the "left", "right", or "middle" of the outermost lineman. @fig-run-gap2 demonstrates no left gaps; two middle gaps; and two right gaps.
+
+```{r}
+#| label: "fig-run-gap2"
+#| fig-cap: "caption here"
+#| out.width: "100%"
+
+knitr::include_graphics("images/03_run_gap_manual.png")
+
+```
+
+#### Orientation Gap
+
+We first calculate the left, middle, and right gap size based on offensive player orientation. If two players in a row are oriented away from each other, or if the end player is oriented away from the sideline then a gap is present, with intuition that the players are trying to push the defense in opposite directions forming a gap. The gap size is quantified as the distance between the offensive players. @fig-run-gap shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. GET SIZES 
+
+```{r}
+#| out.width: "100%"
+
+knitr::include_graphics("images/02_run_gap_manual.png")
+
+```
+
+```{r}
+#| label: "fig-run-gap"
+#| fig-cap: "caption here"
+
+rownames(run_gap_table) <- c("player", "orientation")
+
+run_gap_table |>
+  gt(rownames_to_stub = T) |>
+  fmt_number(rows = "player",
+             decimals = 0) |>
+  fmt_number(rows = "orientation",
+             decimals = 2) |>
+  tab_style(
+    style = list(
+      cell_fill(color = "#F0E442", alpha = 0.5),
+      cell_text(weight = "bold")
+      ),
+    locations = cells_body(
+      columns = c(2, 5, 6, 10)
+    )
+  ) |>
+  tab_options(
+    column_labels.hidden = TRUE
+  )
+
+```
+
+#### Quarterback and Running Back Variables
+
+Other spatial variables include the running back and quarter back orientation, distance between the RB and QB, if the RB is positioned to the left or right of the QB, if the RB was in motion or shifted. 
+
+Additionally, we considered the RB's historical tendencies. For all games prior to the week we calculate the percent of times the RB ran left, right, and middle. If there are multiple RB's on the play we took the average. We considered the current game's historical tendencies. For all plays prior to the current play what percent of the runs were left, right, and middle (again especially for early week games prior season data could improve results).
+
+
+### Other variables {#sec-other-var}
+
+In addition to these calculated variables we consider the following variables: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. See the data codebook for a more detailed explanation of the variables.
+
+## Model
+
+The data was split into a training set consisting of weeks 1 through 6 and a testing set of weeks 7 through 9. Due to the severe class imbalance in run direction (numbers here) we downsampled the training set to prevent overfitting. We fit the training set to a boosted tree model using v-fold cross validation with 4 folds and 3 repeats. All variables mentioned in @sec-spatial-var and @sec-other-var The optimal tuning parameters were found to be STATE PARAMETERS.
+
+We predicted the rush direction on the test dataset and achieved a 40.8% accuracy.
+
+```{r}
+# Visualize confusion matrix
+results |> 
+  conf_mat(rush_loc_calc, .pred_class_main) |> 
+  autoplot(type = "heatmap")
+```
+
+
+This low accuracy is not surprising as the offense is not going to telegraph their play. Due to the severe class imbalance, while it is true a naive guess of "middle" for every rush could offer better accuracy it would provide no intuition on variable importance.
+To determine whether or not the spatial tracking variables offer any insight into rush direction we compare our model results to a baseline model. This baseline model utilizes only the variables from @sec-other-var and a boosted tree model was tuned. The resulting accuracy on the testing set was 36.4%. 
+
+## Insights
+
+Inclusion of the spatial tracking variables improves prediction accuracy by 4.4%. To better understand the significance of these variables we look at the variable importance results from the boosted tree model.
+
+```{r}
+#| label: "tbl-vi"
+#| tbl-cap: "Top 10 significant variables from the boosted tree model."
+
+vi_table |> 
+  select(variable = var_names, importance) |> 
+  gt()
+```
+
+
+
+## Discussion
+
+
+## References
+
+Michael Lopez, Thompson Bliss, Ally Blake, Paul Mooney, and Addison Howard. NFL Big Data Bowl 2025. https://kaggle.com/competitions/nfl-big-data-bowl-2025, 2024. Kaggle.
+
+## Appendix
+
