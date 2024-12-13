@@ -48,4 +48,6 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-raw/tracking_week_*.csv
+# large files
+data/raw/player_play.csv
+data/raw/tracking_week_*.csv
