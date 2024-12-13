@@ -51,3 +51,4 @@ rsconnect/
 # large files
 data/raw/player_play.csv
 data/raw/tracking_week_*.csv
+data/tracking_runs.rds

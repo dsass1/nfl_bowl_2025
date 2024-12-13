@@ -24,36 +24,32 @@ cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
           "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 # load data
-load("recipes/split_down.rda")
+visual_run <- read_rds(here("data/visual_run.rds"))
+visual_gap <- read_rds(here(paste0("data/visual_gap.rds"))) |> 
+  filter(event == "line_set")
 
-load("results/tuned_bt_main3.rda")
-load("results/tuned_bt_base.rda")
+load(here("recipes/split_down.rda"))
+# load(here("results/tuned_bt_main.rda"))
+# load(here("results/tuned_bt_base.rda"))
 
 # check play calc
 # 2022101300 2129 should be right
 ###################################################
 # Defining rush direction
-#2022100203 2292
-#2022100902 3687
-
-#2022103000 2274
-visual_run_2 <- read_rds(here("data/visual_run_2.rds"))
-
 #2022092509 2829
-visual_run_1 <- read_rds(here("data/visual_run_1.rds"))
 
-line_of_scrimmage <- visual_run_1 |> 
+line_of_scrimmage <- visual_run |> 
   filter(club == "football", event == "line_set")
 
 #####################################################
 # only track frames after snap up until rusher passes
-rusher <- visual_run_1 |> 
+rusher <- visual_run |> 
   filter(club == "JAX") |> 
   filter(frame_type %in% c("SNAP", "AFTER_SNAP")) |> 
   filter(jersey_number == 1) |> 
   select(frame_id, x_run = x, y_run = y)
 
-frame_pass <- visual_run_1 |> 
+frame_pass <- visual_run |> 
   filter(club == "JAX") |> 
   filter(frame_type %in% c("SNAP", "AFTER_SNAP")) |> 
   filter(jersey_number %in% c(74, 75)) |> 
@@ -68,7 +64,7 @@ frame_pass <- visual_run_1 |>
 
 ##############################################
 # tracking main players
-run_1_offense <- visual_run_1 |> 
+run_1_offense <- visual_run |> 
   filter(club == "JAX") |> 
   filter(frame_type %in% c("AFTER_SNAP")) |> 
   filter(frame_id <= frame_pass) |> 
@@ -84,7 +80,7 @@ run_1_track <- run_1_offense |>
          ylag = dplyr::lag(y)) |> 
   ungroup()
   
-run_1_football <- visual_run_1 |> 
+run_1_football <- visual_run |> 
   filter(club == "football") |> 
   filter(frame_type %in% c("SNAP", "AFTER_SNAP"))
 
@@ -94,7 +90,7 @@ frame_x <- run_1_track |>
             max = ceiling(max(run_1_track$x)/5)*5)
 
 ## stationary initial offense position for points
-run_1_lineset <- visual_run_1 |> 
+run_1_lineset <- visual_run |> 
   filter(club == "JAX") |>  
   filter(event == "line_set") |> 
   select(-frame_id) |> 
@@ -220,10 +216,8 @@ font_add('fa-solid', 'fonts/Font Awesome 6 Free-Solid-900.otf')
 #loadfonts()
 showtext_auto() 
 
-visual_gap <- read_rds(here(paste0("data/visual_gap_3.rds"))) |> 
-  filter(event == "line_set")
 
-visual_gap$unique_id
+# 2022092509_3135
 
 # get player positions
 line_of_scrimmage <- visual_gap |> 
@@ -623,8 +617,7 @@ ggsave("images/03_run_gap.png", run_gap_2,
 ###################################################
 ###################################################
 
-bt_results3 |> 
-  vip::vi()
+
 
 
 

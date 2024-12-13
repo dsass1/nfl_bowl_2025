@@ -4,7 +4,7 @@ library(here)
 library(aspace)
 
 # get function to calculate qb and rb relationships
-source("00_functions.R")
+source(here("scripts/00_functions.R"))
 
 # needed data
 games <- read_csv(here("data/raw/games.csv")) |> 
@@ -34,6 +34,7 @@ run_gap_list <- lapply(plays_run$unique_id,
                        tracking_data = tracking_runs,
                        unique_tag = x) )
 
+# convert to data frame
 run_gap_calc <- bind_rows(run_gap_list)
 
 

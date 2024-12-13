@@ -3,7 +3,7 @@ library(tidyverse)
 library(here)
 
 # get function to calculate qb and rb relationships
-source("00_functions.R")
+source(here("scripts/00_functions.R"))
 
 # load data
 # from 00_prep_run_data

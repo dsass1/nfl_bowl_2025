@@ -58,11 +58,6 @@ run_players_2 <- run_players_1 |>
             rb_pct_left = sum(run_loc == "left"),
             rb_pct_right = sum(run_loc == "right"),
             rb_pct_middle = sum(run_loc == "middle")
-            #run_inside = sum(run_loc == "inside"),
-            #run_left_in = sum(rush_location_type == "INSIDE_LEFT"),
-            #run_left_out = sum(rush_location_type == "OUTSIDE_LEFT"),
-            #run_right_in = sum(rush_location_type == "INSIDE_RIGHT"),
-            #run_right_out = sum(rush_location_type == "OUTSIDE_RIGHT")
             ) |> 
   ungroup()
 
@@ -75,11 +70,6 @@ run_players_3 <- run_players_2 |>
     rb_pct_left = cumsum(rb_pct_left),
     rb_pct_right = cumsum(rb_pct_right),
     rb_pct_middle = cumsum(rb_pct_middle)
-            # run_inside = cumsum(run_inside),
-            # run_left_in = cumsum(run_left_in),
-            # run_left_out = cumsum(run_left_out),
-            # run_right_in = cumsum(run_right_in),
-            # run_right_out = cumsum(run_right_out)
          ) |> 
   ungroup() |> 
   # only use players who have had multiple runs
@@ -92,11 +82,6 @@ run_players_4 <- run_players_3 |>
     rb_pct_left = rb_pct_left/num_runs,
     rb_pct_right = rb_pct_right/num_runs,
     rb_pct_middle = rb_pct_middle/num_runs
-         # run_inside = run_inside/num_runs,
-         # run_left_in = run_left_in/num_runs,
-         # run_left_out = run_left_out/num_runs,
-         # run_right_in = run_right_in/num_runs,
-         # run_right_out = run_right_out/num_runs
     )
 
 has_run <- run_players_4 |> 

@@ -4,7 +4,7 @@ library(nflverse)
 library(here)
 
 # get function to compute left, middle, right location
-source("00_functions.R")
+source(here("scripts/00_functions.R"))
 
 # load data
 game_week <- read_csv(here("data/raw/games.csv")) |> 
@@ -22,7 +22,7 @@ tracking_runs <- read_rds(here("data/tracking_runs.rds"))
 run_list <- lapply(run_plays$unique_id, 
                        \(x) define_run(
                          tracking_data = tracking_runs,
-                         unique_id = x) )
+                         unique_tag = x) )
 # convert to data frame
 run_dir_calc <- bind_rows(run_list)
 

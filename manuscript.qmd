@@ -38,17 +38,23 @@ vi_table <- read_rds("results/vi_table.rds")
 
 ## Introduction
 
-In football, an offensive play typically involves either a pass or a rush. For a defensive team, accurately predicting the type of play offers a significant strategic advantage. For instance, anticipating a rush allows the defense to position more players in the box, while expecting a pass might prompt defenders to drop back into coverage. Prior research has demonstrated that distinguishing between pass and rush plays can be achieved with 75-80% accuracy using a limited set of variables (cite sources). Building on this foundation, our study focuses on enhancing the defensive advantage by predicting the direction of a rush; categorized as left, middle, or right. Additionally, we aim to identify the key variables that may serve as indicators of rush direction, offering deeper insights into offensive tendencies. [~120 words]
+In football, an offensive play typically involves either a pass or a rush. For a defensive team, accurately predicting the type of play offers a significant strategic advantage. For instance, anticipating a rush allows the defense to position more players in the box, while expecting a pass might prompt defenders to drop back into coverage. Prior research has demonstrated that distinguishing between pass and rush plays can be achieved with 75-80% accuracy using a limited set of variables (Joash Fernandez et al., 2020). Building on this foundation, our study focuses on enhancing the defensive advantage by predicting the direction of a rush; categorized as left, middle, or right. More importantly, we seek to include spatial tracking variables and aim to identify any variables that may be key indicators of rush direction, offering deeper insights into offensive tendencies. 
 
 ## Data preparation
 
-In order to predict rush direction we will use tracking, play by play, player, and game data from the 2022 season provided by the NFL Big Data Bowl 2025 (reference) along with data from the `nflverse` (reference). Our analysis focuses on only rush plays, which provides a total of 6,183 observations. While typically scramble plays are considered rush plays, these observations were omitted from our analysis since we are only using *pre-snap* information and scrambles are intended pass plays that became a rush *after* the ball was snapped.
-
+To predict rush direction, we use tracking, play-by-play, player, and game data from the 2022 NFL season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data from the `nflverse` package (Carl et al., 2023). Our analysis focuses exclusively on rush plays, totaling 6,183 observations. Scramble plays, while typically categorized as rushes, were excluded since they originate as pass plays and involve decisions made after the snap. This aligns with our emphasis on leveraging pre-snap information.
 
 ### Rush direction
 
-Upon visualizing a few plays we observed discrepancies between the tracking data and the provided rush location type. Due to the limited information on how rush direction was calculated and in order to ensure prediction accuracy, we manually calculated the rush direction using the tracking data. At it's simplest definition `rush direction` is classified as either "left", "middle", or "right" depending if the ball carrier advanced past the left most offensive lineman on the **left**, the right most offensive lineman on the **right**, or in the **middle** of those two outside lineman. @fig-run demonstrates the ball carrier rushing to the left of the left most offensive lineman (this play was classified as "inside-left", in other words "middle", in the data provided).
-In the more complicated scenario that the ball carrier does not advance past the lineman or does not cross the line of play then we use the outside lineman's coordinates at line-set to determine if the rusher moved to the left, right, or middle of the lineman.
+Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the provided rush location types. Given the lack of detailed documentation on how rush direction was determined and to enhance prediction accuracy, we recalculated rush direction manually using the tracking data.
+
+At its simplest, rush direction is categorized as "left," "middle," or "right," based on the ball carrier's path relative to the offensive linemen. Specifically, a rush is classified as:
+
+- Left: if the ball carrier advances past the leftmost offensive lineman,
+- Right: if they advance past the rightmost offensive lineman,
+- Middle: if they advance between these two outside linemen.
+
+\noindent Figure @fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
 
 ```{r}
 #| label: "fig-run"
@@ -57,6 +63,7 @@ In the more complicated scenario that the ball carrier does not advance past the
 knitr::include_graphics("images/01_run_definition.gif")
 ```
 
+In more complex scenarios where the ball carrier does not advance past the offensive linemen or does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line set to determine whether the rusher moved to the left, right, or middle relative to the linemen.
 
 ### Spatial variables {#sec-spatial-var}
 
@@ -64,10 +71,15 @@ Pre-snap data was utilized in building the predictive model.
 When a player is rushing they are looking for a gap or hole to run through created by their team. We want to explore if pre-snap player orientation provides insight into a potential gap creation which could indicate where the rusher plans to go. 
 
 
-
 #### Sequential Offensive Player Gap 
 
-The second gap quantification utilizes both the offensive and defensive players. Assuming the offense and defensive players near the line of scrimmage are on the same yardline, each player takes one step forward based on their orientation such that all players are in a single line. If two offensive players are in a row with no defenders between them a gap is formed. Again, we calculate the distance between these offensive players and whether this gap is on the "left", "right", or "middle" of the outermost lineman. @fig-run-gap2 demonstrates no left gaps; two middle gaps; and two right gaps.
+Assuming the offensive and defensive players near the line of scrimmage are positioned one yard away from the line of scrimmage, we project all players positions one yard forward in the direction of their orientation, such that all players are in a single line at the line of scrimmage. A gap is defined if there are two offensive players in a row, or if an offensive player is next to the sideline. The gap is categorized as `left`, `right`, or `middle` based on the gaps position relative to the outside offensive linemen. The value of the gap is calculated as the distance between the two offensive players. 
+
+ @fig-run-gap2 demonstrates a play with no left gaps, two middle gaps, and two right gaps. When there are multiple gaps in a region the largest gap is chosen. The play has the following sequential offensive player gap values: 
+ 
+  - left: 0
+  - right: 21.34
+  - middle: 1.87
 
 ```{r}
 #| label: "fig-run-gap2"
@@ -165,6 +177,10 @@ vi_table |>
 ## References
 
 Michael Lopez, Thompson Bliss, Ally Blake, Paul Mooney, and Addison Howard. NFL Big Data Bowl 2025. https://kaggle.com/competitions/nfl-big-data-bowl-2025, 2024. Kaggle.
+
+Joash Fernandes, Craig et al. ‘Predicting Plays in the National Football League’. 1 Jan. 2020 : 35 – 43.
+
+Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). nflverse: Easily Install and Load the 'nflverse'. https://nflverse.nflverse.com/, https://github.com/nflverse/nflverse.
 
 ## Appendix
 

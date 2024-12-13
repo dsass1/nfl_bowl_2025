@@ -41,40 +41,6 @@ qb_rb_fun <- function(data){
   wk_loc <- loc_one |> 
     left_join(loc_football)
   
-  ##################################################
-  # error handling:
-  # there are 5 plays with no before_snap data
-  # let's get that data and use snap data as proxy
-  # no longer an issue?
-  # no_pre_snap <- anti_join(distinct_plays, wk_loc)
-  # 
-  # if(nrow(no_pre_snap) > 0){
-  #   snap_data <- data |>
-  #     filter(position == "QB" | position == "RB") |> 
-  #     filter(frame_type == "SNAP") |> 
-  #     filter(game_id %in% no_pre_snap$game_id) |> 
-  #     filter(play_id %in% no_pre_snap$play_id) |> 
-  #     group_by(game_id, play_id, nfl_id) |> 
-  #     slice_max(frame_id) |> 
-  #     ungroup()
-  #   
-  #   snap_ball <- data |>
-  #     filter(club == "football") |> 
-  #     filter(frame_type == "SNAP") |> 
-  #     filter(game_id %in% no_pre_snap$game_id) |> 
-  #     filter(play_id %in% no_pre_snap$play_id) |>
-  #     group_by(game_id, play_id, nfl_id) |> 
-  #     slice_max(frame_id) |> 
-  #     ungroup() |> 
-  #     select(game_id, play_id,
-  #            x_ball = x,
-  #            y_ball = y)
-  #   
-  #   snap_info <- snap_data |> 
-  #     left_join(snap_ball)
-  #   
-  #   wk_loc <- rbind(wk_loc, snap_info)
-  # }
   #####################################################
   #####################################################
   # error handling:
