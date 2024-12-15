@@ -1,15 +1,8 @@
 
 library(tidyverse)
-#library(tidymodels)
-#library(xgboost)
 library(vip)
-#library(doParallel)
 library(gganimate)
-#library(ggrepel)
-library(tidyverse)
 library(ggtext)
-#library(fontawesome)
-#library(extrafont)
 # needed for icons
 library(showtext)
 library(RColorBrewer)
@@ -17,7 +10,7 @@ library(here)
 # trig in degrees
 library(aspace)
 
-conflicted::conflict_prefer_all("dplyr")
+# conflicted::conflict_prefer_all("dplyr")
 
 # colorblind friendly palette
 cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
@@ -29,9 +22,28 @@ visual_gap <- read_rds(here(paste0("data/visual_gap.rds"))) |>
   filter(event == "line_set")
 
 load(here("recipes/split_down.rda"))
-# load(here("results/tuned_bt_main.rda"))
-# load(here("results/tuned_bt_base.rda"))
 
+
+###################################################
+# VI results
+load(here("results/bt_results_main.rda"))
+vi_table <- vi_table[1:10,] |> 
+  mutate(var_names = c("distance between QB and RB",
+                       "RB direction",
+                       "RB orientation",
+                       "sequential offensive player gap left",
+                       "sequential offensive player gap middle",
+                       "QB direction",
+                       "orientation gap right",
+                       "orientation gap left",
+                       "QB orientation",
+                       "sequential offensive player gap right")
+  )
+
+write_rds(vi_table, here("results/vi_table.rds"))
+
+###################################################
+# ANIMATION ON RUSH DIRECTION DEGINITION
 # check play calc
 # 2022101300 2129 should be right
 ###################################################
@@ -41,7 +53,6 @@ load(here("recipes/split_down.rda"))
 line_of_scrimmage <- visual_run |> 
   filter(club == "football", event == "line_set")
 
-#####################################################
 # only track frames after snap up until rusher passes
 rusher <- visual_run |> 
   filter(club == "JAX") |> 
@@ -86,7 +97,7 @@ run_1_football <- visual_run |>
 
 # get coordinates for field
 frame_x <- run_1_track |> 
-  summarize(min = floor(min(run_1_track$x)/5)*5,
+  dplyr::summarize(min = floor(min(run_1_track$x)/5)*5,
             max = ceiling(max(run_1_track$x)/5)*5)
 
 ## stationary initial offense position for points
@@ -213,10 +224,6 @@ font_add('fa-reg', 'fonts/Font Awesome 6 Free-Regular-400.otf')
 #font_add('fa-brands', 'fonts/Font Awesome 6 Brands-Regular-400.otf')
 font_add('fa-solid', 'fonts/Font Awesome 6 Free-Solid-900.otf')
 
-#loadfonts()
-showtext_auto() 
-
-
 # 2022092509_3135
 
 # get player positions
@@ -327,7 +334,11 @@ gap_define <- offense |>
          )
   )
   
-  
+showtext_auto() 
+showtext_opts(dpi = 250)
+
+#showtext::showtext_opts(dpi = knitr::opts_chunk$get()$dpi)
+
 run_gap_1 <- ggplot() +
   # outline for left/middle/right
   geom_rect(aes(xmin=gap_df$y[2:4], 
@@ -362,12 +373,12 @@ run_gap_1 <- ggplot() +
                 # remove label and outline
                 fill = NA, label.colour = NA,
                 col = cbp1[6],
-                size = 9) +
+                size = 6) +
   # add numbers to players
   geom_label(data = gap_define[2:10,], 
             aes(x = y, y = 0.75, 
                 label = seq(1, 9)),
-            size = 10, size.unit = "pt") +
+            size = 11, size.unit = "pt") +
   scale_fill_manual(values = c("yes" = cbp1[5], 
                                 "no" = cbp1[1])
   ) +
@@ -378,13 +389,14 @@ run_gap_1 <- ggplot() +
                   ylim = c(0.5, 1.5), 
                   expand = FALSE) +
   theme_minimal() +
-  labs(title = "Orientation gaps based on offensive player alignment at line set"
-       #subtitle = "There is a middle gap between players 2 and 3 and a right gap between players 6 and 7."
+  labs(title = "Gaps defined by offensive player orientation at line set",
+       subtitle = "Players oriented away from each other form a gap"
        ) +
   theme(panel.background = element_rect(fill = "white"),
         legend.position = "none",
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
-        plot.title = ggtext::element_markdown(hjust = 0.5, size = 12),
+        plot.title = element_text(size = 12, hjust = 0.5),
+        #plot.title = ggtext::element_markdown(hjust = 0.5, size = 12),
         #text = element_text(family = "Chivo", color = "#26282A"),
         axis.text = element_blank(),
         panel.grid = element_blank(),
@@ -395,9 +407,11 @@ print(run_gap_1)
 
 # use export it saves better
 ggsave("images/02_run_gap.png", 
-       run_gap_1
-       #width = 1116,
-       #height = 327, units = "px"
+       run_gap_1,
+       width = 1116,
+       height = 327, 
+       units = "px",
+       dpi = 250
        )
 
 #save(run_gap_1, file = "images/run_gap_1.rda")
@@ -445,7 +459,7 @@ gap_define <- line_set |>
   rbind(sideline) |> 
   arrange(yend) |> 
   mutate(club_lag = lag(club)) |> 
-  #filter(club == tm_o) |> 
+  filter(club == tm_o) |> 
   mutate(
     y_lag = lag(yend),
     gap = case_when(
@@ -453,6 +467,9 @@ gap_define <- line_set |>
            TRUE ~ "no"
          )
   )
+
+showtext_auto()
+showtext_opts(dpi = 250)
 
 run_gap_2 <- ggplot() +
   # outline for left/middle/right
@@ -487,7 +504,7 @@ run_gap_2 <- ggplot() +
                 # remove label and outline
                 fill = NA, label.colour = NA,
                 col = cbp1[6],
-                size = 9,
+                size = 6,
                 alpha = 0.5) +
   # label offense
   geom_segment(
@@ -498,14 +515,15 @@ run_gap_2 <- ggplot() +
   ) +
   annotate("text",
            x = 40, y = .65, label = "offense",
-           hjust = 0
+           hjust = 0,
+           size = 11, size.unit = "pt"
   ) +
   # points where offense end
   geom_point(data = offense,
                 aes(x = yend, y = .875
                     ),
                 col = cbp1[6],
-                size = 3
+                size = 4
              ) +
   # user icons
   geom_richtext(data = defense,
@@ -516,7 +534,7 @@ run_gap_2 <- ggplot() +
                 # remove label and outline
                 fill = NA, label.colour = NA,
                 col = cbp1[7],
-                size = 9,
+                size = 6,
                 alpha = 0.5) +
   # label defense
   geom_segment(
@@ -527,13 +545,14 @@ run_gap_2 <- ggplot() +
   ) +
   annotate("text",
            x = 40, y = 1.1, label = "defense",
-           hjust = 0
+           hjust = 0,
+           size = 11, size.unit = "pt"
   ) +
   geom_point(data = defense,
                 aes(x = yend, y = 0.875
                     ),
                 col = cbp1[7],
-                size = 3) +
+                size = 4) +
   geom_segment(
     data = offense,
     aes(x = y, y = .65,
@@ -553,13 +572,13 @@ run_gap_2 <- ggplot() +
              aes(x = yend, y = 0.15,
                  col = club
              ),
-             size = 3
+             size = 4
   ) +
   # add numbers to players
   geom_label(data = gap_define[2:10,],
              aes(x = yend, y = 0.05,
                  label = seq(1, 9)),
-             size = 10, size.unit = "pt") +
+             size = 11, size.unit = "pt") +
   geom_curve(aes(x = 13, xend = 13,
                    y = 0.85, yend = 0.15),
                arrow = arrow(length = unit(0.3,"cm")),
@@ -581,8 +600,8 @@ run_gap_2 <- ggplot() +
                   ylim = c(0, 1.25), 
                   expand = FALSE) +
   theme_minimal() +
-  labs(title = "Gaps defined by two offensive players in a row.",
-       subtitle = "Offense and defense positions are projected onto the same yardline."
+  labs(title = "Gaps defined by two offensive players in a row",
+       subtitle = "Offense and defense positions are projected one yard forward onto the line of scrimmage"
   ) +
   theme(panel.background = element_rect(fill = "white"),
         legend.position = "none",
@@ -591,7 +610,7 @@ run_gap_2 <- ggplot() +
         #legend.title = element_blank(),
         #legend.background = element_rect(linewidth = 0.1),
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
-        plot.title = ggtext::element_markdown(hjust = 0.5, size = 12),
+        plot.title = element_text(hjust = 0.5, size = 12),
         #text = element_text(family = "Chivo", color = "#26282A"),
         axis.text = element_blank(),
         panel.grid = element_blank(),
@@ -603,7 +622,7 @@ print(run_gap_2)
 # use export it saves better
 ggsave("images/03_run_gap.png", run_gap_2,
        width = 1116, height=327,
-       units = "px"
+       units = "px", dpi = 250
        )
 
 

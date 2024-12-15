@@ -8,7 +8,7 @@ format:
     toc-depth: 4
     toc-location: left
     embed-resources: true
-    code-fold: false
+    number-sections: true
     link-external-newwindow: true
 
 execute:
@@ -31,9 +31,39 @@ library(yardstick)
 library(here)
 
 load(here("results/bt_results_main.rda"))
-results <- read_rds(here("results/results.rds"))
+predictions <- read_rds(here("results/predictions.rds"))
 run_gap_table <- read_csv("images/run_gap_table.csv")
 vi_table <- read_rds("results/vi_table.rds")
+
+accuracy_main <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_main) |> pull(.estimate) |> round(3)
+
+accuracy_base <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_base) |> pull(.estimate) |> round(3)
+
+accuracy_naive <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_naive) |> pull(.estimate) |> round(3)
+
+
+vi_table <- bt_results_main |> 
+  vip::vi() |> 
+  janitor::clean_names()
+
+vi_table <- vi_table[1:10,] |> 
+  mutate(var_names = c("distance between QB and RB",
+                       "sequential offensive player gap left",
+                       "RB orientation",
+                       "RB direction",
+                       "QB direction",
+                       "sequential offensive player gap middle",
+                       "QB orientation",
+                       "sequential offensive player gap right",
+                       "orientation gap left",
+                       "orientation gap right")
+         )
 ```
 
 ## Introduction
@@ -143,22 +173,22 @@ In addition to these calculated variables we consider the following variables: `
 
 The data was split into a training set consisting of weeks 1 through 6 and a testing set of weeks 7 through 9. Due to the severe class imbalance in run direction (numbers here) we downsampled the training set to prevent overfitting. We fit the training set to a boosted tree model using v-fold cross validation with 4 folds and 3 repeats. All variables mentioned in @sec-spatial-var and @sec-other-var The optimal tuning parameters were found to be STATE PARAMETERS.
 
-We predicted the rush direction on the test dataset and achieved a 40.8% accuracy.
+We predicted the rush direction on the test dataset and achieved a `r accuracy_main*100`% accuracy.
 
 ```{r}
 # Visualize confusion matrix
-results |> 
+predictions |> 
   conf_mat(rush_loc_calc, .pred_class_main) |> 
   autoplot(type = "heatmap")
 ```
 
 
 This low accuracy is not surprising as the offense is not going to telegraph their play. Due to the severe class imbalance, while it is true a naive guess of "middle" for every rush could offer better accuracy it would provide no intuition on variable importance.
-To determine whether or not the spatial tracking variables offer any insight into rush direction we compare our model results to a baseline model. This baseline model utilizes only the variables from @sec-other-var and a boosted tree model was tuned. The resulting accuracy on the testing set was 36.4%. 
+To determine whether or not the spatial tracking variables offer any insight into rush direction we compare our model results to a baseline model. This baseline model utilizes only the variables from @sec-other-var and a boosted tree model was tuned. The resulting accuracy on the testing set was `r accuracy_base*100`%. 
 
 ## Insights
 
-Inclusion of the spatial tracking variables improves prediction accuracy by 4.4%. To better understand the significance of these variables we look at the variable importance results from the boosted tree model.
+Inclusion of the spatial tracking variables improves prediction accuracy by `r accuracy_main*100 - accuracy_base*100`%. To better understand the significance of these variables we look at the variable importance results from the boosted tree model.
 
 ```{r}
 #| label: "tbl-vi"
@@ -176,11 +206,13 @@ vi_table |>
 
 ## References
 
-Michael Lopez, Thompson Bliss, Ally Blake, Paul Mooney, and Addison Howard. NFL Big Data Bowl 2025. https://kaggle.com/competitions/nfl-big-data-bowl-2025, 2024. Kaggle.
+Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). 'nflverse'. [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
 
-Joash Fernandes, Craig et al. ‘Predicting Plays in the National Football League’. 1 Jan. 2020 : 35 – 43.
+Joash Fernandes C, et al., (2020), ‘Predicting Plays in the National Football League’. Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
 
-Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). nflverse: Easily Install and Load the 'nflverse'. https://nflverse.nflverse.com/, https://github.com/nflverse/nflverse.
+Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), 'NFL Big Data Bowl 2025'. [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
+
+
 
 ## Appendix
 

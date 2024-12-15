@@ -3,12 +3,14 @@ library(tidyverse)
 library(tidymodels)
 library(xgboost)
 library(vip)
-library(doParallel)
+library(here)
 
-load("recipes/split_down.rda")
+set.seed(622)
 
-load("results/tuned_bt_base.rda")
-load("results/tuned_bt_main.rda")
+load(here("recipes/split_down.rda"))
+
+load(here("results/tuned_bt_base.rda"))
+load(here("results/tuned_bt_main.rda"))
 
 model_set <-
   as_workflow_set(
@@ -57,19 +59,19 @@ vi_table <- bt_results_main |>
 
 vi_table <- vi_table[1:10,] |> 
   mutate(var_names = c("distance between QB and RB",
-                       "sequential offensive player gap left",
-                       "RB orientation",
                        "RB direction",
-                       "QB direction",
+                       "RB orientation",
+                       "sequential offensive player gap left",
                        "sequential offensive player gap middle",
-                       "QB orientation",
-                       "sequential offensive player gap right",
+                       "QB direction",
+                       "orientation gap right",
                        "orientation gap left",
-                       "orientation gap right")
-         )
+                       "QB orientation",
+                       "sequential offensive player gap right")
+  )
 
 ## predict our test data
-results <- test |> 
+predictions <- test |> 
   select(rush_loc_calc) |> 
   bind_cols(predict(bt_results_main, new_data = test,
                     type = "class")) |>  
@@ -82,26 +84,26 @@ results <- test |>
                                     levels = c("left","middle", "right")))
 
 ## conf mat
-conf_mat(results, 
+conf_mat(predictions, 
          truth = rush_loc_calc, 
          estimate = .pred_class_main)
-conf_mat(results, 
+conf_mat(predictions, 
          truth = rush_loc_calc, 
          estimate = .pred_class_base)
 
-accuracy(results, 
+accuracy(predictions, 
          truth = rush_loc_calc, 
          estimate = .pred_class_main)
-accuracy(results, 
+accuracy(predictions, 
          truth = rush_loc_calc, 
          estimate = .pred_class_base)
 # naive guess of "middle"
-accuracy(results, 
+accuracy(predictions, 
          truth = rush_loc_calc, 
          estimate = .pred_class_naive)
 #.552
 
 
 save(bt_results_main, file = here("results/bt_results_main.rda"))
-write_rds(results, here("results/results.rds"))
-write_rds(vi_table, here("results/vi_table.rds"))
+write_rds(predictions, here("results/predictions.rds"))
+#write_rds(vi_table, here("results/vi_table.rds"))
