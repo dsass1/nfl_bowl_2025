@@ -13,7 +13,9 @@ tidymodels_prefer()
 
 # parallel processing ----
 # num_cores <- parallel::detectCores(logical = TRUE)
-registerDoParallel(cores = 8)
+num_cores <- 8
+cl <- makePSOCKcluster(num_cores)
+registerDoParallel(cl)
 
 # load data
 load(here("recipes/recipe_base.rda"))
@@ -30,9 +32,14 @@ bt_model <- boost_tree(mode = "classification",
 
 # define parameters to update
 bt_params <- extract_parameter_set_dials(bt_model) %>% 
-  update(mtry = mtry(c(1, 25)))
+  update(mtry = mtry(c(5, 25)),
+         trees = trees(c(500, 2000)),
+         learn_rate = learn_rate(c(-5, -.1)),
+         min_n = min_n(c(2, 40)))
 
-bt_grid <- grid_regular(bt_params, levels = 5)
+bt_grid <- grid_regular(bt_params, 
+                        levels = c(5, 4,
+                                   10, 5))
 
 # Create workflow
 bt_workflow <- workflow() |> 
@@ -46,3 +53,5 @@ tuned_bt_base <- bt_workflow |>
 
 save(tuned_bt_base, 
      file = here("results/tuned_bt_base.rda"))
+
+stopCluster(cl)

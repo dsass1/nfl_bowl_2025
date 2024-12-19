@@ -22,33 +22,43 @@ visual_gap <- read_rds(here(paste0("data/visual_gap.rds"))) |>
   filter(event == "line_set")
 
 load(here("recipes/split_down.rda"))
+run_plays_final <- read_rds(here("data/run_plays_final.rds") )
 
+# split the data
+train <- run_plays_final |> 
+  filter(week <= 6)
 
 ###################################################
 # VI results
 load(here("results/bt_results_main.rda"))
-vi_table <- vi_table[1:10,] |> 
-  mutate(var_names = c("distance between QB and RB",
-                       "RB direction",
-                       "RB orientation",
+
+vi_table <-  bt_results_main |> 
+  vip::vi() |> 
+  janitor::clean_names() |> 
+  slice_max(importance, n = 10) |> 
+  mutate(var_names = c("RB historical percent right",
                        "sequential offensive player gap left",
-                       "sequential offensive player gap middle",
-                       "QB direction",
+                       "RB historical percent left",
+                       "RB orientation",
+                       "sequential offensive player gap right",
+                       "RB historical percent middle",
                        "orientation gap right",
                        "orientation gap left",
-                       "QB orientation",
-                       "sequential offensive player gap right")
+                       "sequential offensive player gap middle",
+                       "absolute yardline")
   )
 
 write_rds(vi_table, here("results/vi_table.rds"))
 
 ###################################################
-# ANIMATION ON RUSH DIRECTION DEGINITION
-# check play calc
-# 2022101300 2129 should be right
+# ANIMATION ON RUSH DIRECTION DEFINITION
 ###################################################
 # Defining rush direction
 #2022092509 2829
+plays <- read_csv("data/raw/plays.csv")
+plays |> 
+  filter(gameId == 2022092509, playId == 2829) |> 
+  pull(playDescription)
 
 line_of_scrimmage <- visual_run |> 
   filter(club == "football", event == "line_set")
@@ -124,10 +134,22 @@ label_arrows <- tibble(
 
 
 hash_lines <- tibble(
-  x = c(seq(frame_x$min, frame_x$max, 1),seq(frame_x$min, frame_x$max, 1) ), 
-  xend = c(seq(frame_x$min, frame_x$max, 1), seq(frame_x$min, frame_x$max, 1) ),
-  y = c(rep(15, frame_x$max - frame_x$min + 1), rep(53.3 - 15, frame_x$max - frame_x$min + 1) ),
-  yend = c(rep(16.5, frame_x$max - frame_x$min + 1), rep(53.3 - 16.5, frame_x$max - frame_x$min + 1) )
+  x = c(seq(frame_x$min, frame_x$max, 1),
+        seq(frame_x$min, frame_x$max, 1),
+        seq(frame_x$min, frame_x$max, 1),
+        seq(frame_x$min, frame_x$max, 1)), 
+  xend = c(seq(frame_x$min, frame_x$max, 1), 
+           seq(frame_x$min, frame_x$max, 1),
+           seq(frame_x$min, frame_x$max, 1),
+           seq(frame_x$min, frame_x$max, 1)),
+  y = c(rep(19, frame_x$max - frame_x$min + 1), 
+        rep(53.3 - 19, frame_x$max - frame_x$min + 1),
+        rep(1, frame_x$max - frame_x$min + 1), 
+        rep(53.3 - 1, frame_x$max - frame_x$min + 1)),
+  yend = c(rep(20.5, frame_x$max - frame_x$min + 1), 
+           rep(53.3 - 20.5, frame_x$max - frame_x$min + 1),
+           rep(2.5, frame_x$max - frame_x$min + 1), 
+           rep(53.3 - 2.5, frame_x$max - frame_x$min + 1))
 )
 
 
@@ -220,7 +242,7 @@ anim_save("images/01_run_definition.gif", run_dir_1)
 
 # download icons here: https://fontawesome.com/download
 # put .otf files in working directory
-font_add('fa-reg', 'fonts/Font Awesome 6 Free-Regular-400.otf')
+# font_add('fa-reg', 'fonts/Font Awesome 6 Free-Regular-400.otf')
 #font_add('fa-brands', 'fonts/Font Awesome 6 Brands-Regular-400.otf')
 font_add('fa-solid', 'fonts/Font Awesome 6 Free-Solid-900.otf')
 
@@ -364,6 +386,21 @@ run_gap_1 <- ggplot() +
             aes(x = ymid, y = 1.25 + (1.5-1.25)/2, 
                 label = label),
             size = 11, size.unit = "pt") +
+  # degree
+  annotate("text",
+           x = c(40, 41.5, 42.8), 
+           y = c(0.6, 0.75, 0.6), 
+           label = c("-90°", "0°", "90°"),
+           size = 9, size.unit = "pt") +
+  geom_richtext(aes(x = 41.4, y = 0.6,
+                    label = "<span style='font-family: \"fa-solid\"'>&#xf007;</span>",
+                    angle = 0),
+                # remove label and outline
+                fill = NA, label.colour = NA,
+                col = "black", #cbp1[6], 
+                size = 6) +
+  geom_point(aes(x = 41.4, y = 0.6),
+             shape = 1, size = 17) +
   # user icons
   geom_richtext(data = offense,
                 aes(x = y, y = 1,
@@ -396,8 +433,6 @@ run_gap_1 <- ggplot() +
         legend.position = "none",
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
         plot.title = element_text(size = 12, hjust = 0.5),
-        #plot.title = ggtext::element_markdown(hjust = 0.5, size = 12),
-        #text = element_text(family = "Chivo", color = "#26282A"),
         axis.text = element_blank(),
         panel.grid = element_blank(),
         axis.title = element_blank(),
@@ -425,7 +460,7 @@ run_gap_table <- tibble(
 
 rownames(run_gap_table) <- c("player", "orientation")
 
-write_csv(run_gap_table, here("images/run_gap_table.csv"))
+write_csv(run_gap_table, here("results/run_gap_table.csv"))
 
 
 #################################
@@ -471,6 +506,7 @@ gap_define <- line_set |>
 showtext_auto()
 showtext_opts(dpi = 250)
 
+ymin = -0.1
 run_gap_2 <- ggplot() +
   # outline for left/middle/right
   geom_rect(aes(xmin=gap_df$y[2:4], 
@@ -486,7 +522,7 @@ run_gap_2 <- ggplot() +
   geom_rect(
     data = gap_define,
     aes(xmin = y_lag, xmax = yend,
-        min = 0, ymax = 0.25,
+        min = ymin, ymax = 0.25,
         fill = gap, alpha = gap),
     color = "black",
     linewidth = 0.1
@@ -576,7 +612,7 @@ run_gap_2 <- ggplot() +
   ) +
   # add numbers to players
   geom_label(data = gap_define[2:10,],
-             aes(x = yend, y = 0.05,
+             aes(x = yend, y = 0.00,
                  label = seq(1, 9)),
              size = 11, size.unit = "pt") +
   geom_curve(aes(x = 13, xend = 13,
@@ -597,7 +633,7 @@ run_gap_2 <- ggplot() +
                      guide = "none"
   ) +
   coord_cartesian(xlim = c(0+adj_plot/2, 53.3-adj_plot), 
-                  ylim = c(0, 1.25), 
+                  ylim = c(ymin, 1.25), 
                   expand = FALSE) +
   theme_minimal() +
   labs(title = "Gaps defined by two offensive players in a row",
@@ -611,7 +647,6 @@ run_gap_2 <- ggplot() +
         #legend.background = element_rect(linewidth = 0.1),
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
         plot.title = element_text(hjust = 0.5, size = 12),
-        #text = element_text(family = "Chivo", color = "#26282A"),
         axis.text = element_blank(),
         panel.grid = element_blank(),
         axis.title = element_blank(),
@@ -635,8 +670,127 @@ ggsave("images/03_run_gap.png", run_gap_2,
 # right_gap_tm = 21.33704
 ###################################################
 ###################################################
+showtext_auto(FALSE)
+# important variable 1: RB historical tendencies
+rb_boxplot <- train |> 
+  select(rush_loc_calc, 
+         `RB historical left`= rb_pct_left, 
+         `RB historical right` = rb_pct_right, 
+         `RB historical middle` = rb_pct_middle) |> 
+  pivot_longer(
+    cols = -rush_loc_calc,
+    names_to = "rb_loc",
+    values_to = "loc_pct"
+  ) |> 
+  mutate(
+    shade = case_when(
+      rb_loc == "RB historical left"  & rush_loc_calc == "left" ~ "yes",
+      rb_loc == "RB historical right"  & rush_loc_calc == "right" ~ "yes",
+      rb_loc == "RB historical middle"  & rush_loc_calc == "middle" ~ "yes",
+      TRUE ~ "no"
+    )
+  ) |>
+  ggplot(aes(x = rush_loc_calc, y = loc_pct,
+             fill = shade)) +
+  geom_boxplot(alpha = 0.5) +
+  facet_wrap(~rb_loc) +
+  theme_bw() +
+  scale_fill_manual(values = c("yes" = cbp1[6], 
+                               "no" = "white"),
+                    guide = NULL) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(y = NULL,
+       x = "rush location",
+       #title = "Distribution of RBs historical rush direction percent by the plays actual rush location") +
+       title = "Relationship between a play's rush location and the RB's historical rush location tendencies") +
+  theme(strip.background =element_rect(fill="#e6e6e6"),
+        plot.title = element_text(hjust = 0.5, size = 12),
+  )
 
 
+print(rb_boxplot)
+
+# ggsave("images/04_rb_boxplot.png", rb_boxplot,
+#        width = 857, height=450,
+#        units = "px" #, dpi = 250
+# )
+
+# important variable 3: rb orientation
+train |> 
+  ggplot(aes(x = rush_loc_calc, y = o_rb_adj)) +
+  geom_boxplot()
+
+# important variable 2: team gap
+# normalize values
+gap_boxplot <- train |> 
+  # normalize variables
+  mutate(left_gap_norm = (left_gap_tm - mean(left_gap_tm))/sd(left_gap_tm),
+         right_gap_norm = (right_gap_tm - mean(right_gap_tm))/sd(right_gap_tm),
+         middle_gap_norm = (middle_gap_tm - mean(middle_gap_tm))/sd(middle_gap_tm)) |> 
+  select(rush_loc_calc, 
+         `left gap size`= left_gap_norm, 
+         `right gap size` = right_gap_norm, 
+         `middle gap size` = middle_gap_norm) |> 
+  pivot_longer(
+    cols = -rush_loc_calc,
+    names_to = "gap_loc",
+    values_to = "gap_size"
+  ) |> 
+  mutate(
+    shade = case_when(
+      gap_loc == "left gap size"  & rush_loc_calc == "left" ~ "yes",
+      gap_loc == "right gap size"  & rush_loc_calc == "right" ~ "yes",
+      gap_loc == "middle gap size"  & rush_loc_calc == "middle" ~ "yes",
+      TRUE ~ "no"
+    )
+  ) |>
+  ggplot(aes(x = rush_loc_calc,
+             y = gap_size,
+             fill = shade)) +
+  geom_boxplot(alpha = 0.5) +
+  facet_wrap(~gap_loc) +
+  theme_bw() +
+  scale_fill_manual(values = c("yes" = cbp1[6], 
+                               "no" = "white"),
+                    guide = NULL) +
+  labs(y = NULL,
+       x = "rush location",
+       title = "Normalized distribution of gap size by rush location") +
+  ylim(-3,3) +
+  theme(strip.background =element_rect(fill="#e6e6e6"),
+        plot.title = element_text(hjust = 0.5, size = 12),
+  )
 
 
+# okay
+#check <- train |> 
+#  filter(middle_gap_tm > 5)
+
+print(gap_boxplot)
+
+# ggsave("images/05_gap_boxplot.png", gap_boxplot,
+#        width = 857, height=450,
+#        units = "px"
+# )
+
+# important variable: left gap o
+train |> 
+  select(rush_loc_calc, 
+         `left gap size`= left_gap_o, 
+         `right gap size` = right_gap_o, 
+         `middle gap size` = middle_gap_o) |> 
+  pivot_longer(
+    cols = -rush_loc_calc,
+    names_to = "gap_loc",
+    values_to = "gap_size"
+  ) |> 
+  ggplot(aes(x = rush_loc_calc,
+             y = gap_size)) +
+  geom_boxplot() +
+  facet_wrap(~gap_loc) +
+  theme_minimal() +
+  labs(y = "gap size",
+       x = "rush location")
+
+gap_boxplot
 

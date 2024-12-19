@@ -219,7 +219,7 @@ qb_rb_fun <- function(data){
 # function used to calculate info in 02_create_run_gap.R
 # ---------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------
-#unique_tag = "2022091811_120"
+#unique_tag = "2022092501_308"
 #tracking_data <- tracking_runs
 
 run_gap <- function(tracking_data, unique_tag){
@@ -465,7 +465,7 @@ run_gap <- function(tracking_data, unique_tag){
 ## classify as left, middle, right
 
 # tracking_data <- tracking_runs
-# unique_tag <- "2022103012_2440"
+# unique_tag <- "2022091802_1034"
 define_run <- function(tracking_data, unique_tag){
   # check progress
   print(paste0(unique_tag))
@@ -476,16 +476,29 @@ define_run <- function(tracking_data, unique_tag){
   track1 <- tracking_data |> 
     filter(game_id == game_tag, play_id == play_tag)
   
+  # get football
   football <- track1 |> 
     filter(club == "football") |> 
     filter(frame_type == "AFTER_SNAP") |> 
     select(frame_id, event,
            x_ball = x, 
            y_ball = y)
+  
   # where did the ball start for comparison later
   ball_initial <- track1 |> 
     filter(club == "football") |> 
     filter(frame_type == "SNAP")
+  
+  # which team is on offense?
+  offense <- track1 |> 
+    filter(position == "QB" | position == "RB") |> 
+    distinct(club) |> 
+    pull(club) 
+  # which team is on defense?
+  defense <- track1 |> 
+    distinct(club) |> 
+    filter(! (club %in% c(offense, "football")) ) |> 
+    pull(club)
   
   # get data after handoff
   handoff_frame <- football |> 
@@ -501,18 +514,61 @@ define_run <- function(tracking_data, unique_tag){
     handoff_frame <- handoff_frame + 5
   }
   
-  # left or right
+  # is play direction left or right?
   play_dir <- track1 |> 
     distinct(play_direction) |> 
     pull(play_direction)
   
-  # get our lineman
-  line_pos <- track1 |> 
-    filter(position %in% c("T", "G", "C")) |> 
+  ####################
+  # get our center (needed for linemen check)
+  center <- track1 |> 
     filter(frame_type == "SNAP") |> 
-    select(frame_id, club, play_direction, x, y, position, nfl_id)
+    filter(position %in% c("C")) |> 
+    mutate(dist_ball = sqrt((x - ball_initial$x)^2 + (y-ball_initial$y)^2)) |> 
+    slice_min(dist_ball)
+  
+  # if there is no "center" get player closest to ball
+  if(nrow(center) == 0){
+    center <- track1 |> 
+      filter(frame_type == "SNAP") |> 
+      filter(position %in% c("G", "T")) |> 
+      mutate(dist_ball = sqrt((x - ball_initial$x)^2 + (y-ball_initial$y)^2)) |> 
+      slice_min(dist_ball)
+  }
+  
+  #check positions
+  plot <- ggplot(track1[track1$frame_type == "SNAP",], aes(x = x, y = y)) +
+    geom_text(aes(label = position)) +
+    ggtitle(unique_tag)
+  print(plot)
+  
+  # get our 5 linemen
+  line_pos <- track1 |> 
+    filter(frame_type == "SNAP") |> 
+    filter(position %in% c("C", "G", "T")) |> 
+    select(frame_id, club, play_direction, x, y, position, nfl_id) |> 
+    mutate(dist_y = y - center$y) 
+  
+  # sometimes players do not match their "position"
+  # perhaps due to injury or change of line up
+  # check that 2 players are left and 2 are right of C
+  # to check for mislabeled linemen
+  if(sum(sign(line_pos$dist_y)) != 0){
+    line_pos <- track1 |> 
+      filter(frame_type == "SNAP") |> 
+      # sometimes a mislabeled TE is in the line
+      filter(position %in% c("T", "G", "C", "TE")) |>
+      mutate(dist_ball = sqrt((x - ball_initial$x)^2 + (y-ball_initial$y)^2),
+             dist_x = abs(x-center$x)) |> 
+      slice_min(dist_ball, n = 5) |> 
+      select(frame_id, club, play_direction, x, y, position, nfl_id)
+  }
+  
+  print(line_pos$position)
+  
   
   if(play_dir == "left"){
+    # get left and right lineman
     player_left <- line_pos |> 
       slice_min(y) |> 
       pull(nfl_id)
@@ -520,7 +576,7 @@ define_run <- function(tracking_data, unique_tag){
       slice_max(y) |> 
       pull(nfl_id)
     
-    # where do the lineman start?
+    # where do the lineman start at snap?
     out_left_initial <- track1 |> 
       filter(nfl_id == player_left) |> 
       filter(frame_type == "SNAP")
@@ -532,13 +588,31 @@ define_run <- function(tracking_data, unique_tag){
     # then determine if it was to the right or left of player
     out_left_tmp <- track1 |> 
       filter(nfl_id == player_left) |> 
-      filter(frame_id >= handoff_frame) |> 
+      filter(frame_id > handoff_frame) |> 
       select(frame_id, club, play_direction, event, x, y) |> 
       left_join(football, by = join_by(frame_id, event)) |> 
       mutate(pass_player = ifelse(x_ball >= x, "no", "yes"),
              pass_initial = ifelse(x_ball >= out_left_initial$x,
                                    "no", "yes"))
     
+    ################################
+    # if "yes" is the first frame there is an error with data
+    # ball should not be ahead of linemen at snap
+    which_player_no <- which(out_left_tmp$pass_player == "no")
+    which_init_no <- which(out_left_tmp$pass_initial == "no")
+    
+    # if pass_player is not all yes and not all no
+    if(length(which_player_no) != 0 & length(which_player_no) != nrow(out_left_tmp)){
+      # keep first "no" to end of data
+      out_left_tmp <- out_left_tmp[min(which_player_no):nrow(out_left_tmp),]
+      # now if all no and initial_player is not all yes
+    } else if(length(which_player_no) != nrow(out_left_tmp) & length(which_init_no) != 0){
+      # keep first "no" to end of data
+      out_left_tmp <- out_left_tmp[min(which_init_no):nrow(out_left_tmp),]
+    }
+    ################################
+    
+    # now determine if the rush was left or right of left lineman
     if(sum(str_detect(out_left_tmp$pass_player, "yes")) >= 1 ){
       out_left <- out_left_tmp |> 
         filter(pass_player == "yes") |> 
@@ -561,7 +635,6 @@ define_run <- function(tracking_data, unique_tag){
           slice_max(frame_id) |> 
           mutate(which_side = ifelse(y_ball < out_left_initial$y, "left", "right"))
       }
-      
     } else{
       # if never passes line of play
       # when the first_contact happens
@@ -573,9 +646,10 @@ define_run <- function(tracking_data, unique_tag){
         mutate(which_side = ifelse(y_ball < out_left_initial$y, "left", "right"))
     }
     
+    # now do the same check for the right lineman
     out_right_tmp <- track1 |> 
       filter(nfl_id == player_right) |> 
-      filter(frame_id >= handoff_frame) |> 
+      filter(frame_id > handoff_frame) |> 
       select(frame_id, club, play_direction, event, x, y) |> 
       left_join(football, by = join_by(frame_id, event)) |> 
       mutate(pass_player = ifelse(x_ball >= x, 
@@ -583,6 +657,24 @@ define_run <- function(tracking_data, unique_tag){
              pass_initial = ifelse(x_ball >= out_right_initial$x,
                                    "no", "yes"))
     
+    ################################
+    # if "yes" is the first frame there is an error with data
+    # ball should not be ahead of linemen at snap
+    which_player_no <- which(out_right_tmp$pass_player == "no")
+    which_init_no <- which(out_right_tmp$pass_initial == "no")
+    
+    # if pass_player is not all yes and not all no
+    if(length(which_player_no) != 0 & length(which_player_no) != nrow(out_right_tmp)){
+      # keep first "no" to end of data
+      out_right_tmp <- out_right_tmp[min(which_player_no):nrow(out_right_tmp),]
+      # now if all no and initial_player is not all yes
+    } else if(length(which_player_no) != nrow(out_right_tmp) & length(which_init_no) != 0){
+      # keep first "no" to end of data
+      out_right_tmp <- out_right_tmp[min(which_init_no):nrow(out_right_tmp),]
+    }
+    ################################
+    
+    # now did rush happen left or right of right lineman
     if(sum(str_detect(out_right_tmp$pass_player, "yes") ) >= 1 ){
       out_right <- out_right_tmp |> 
         filter(pass_player == "yes") |> 
@@ -605,7 +697,6 @@ define_run <- function(tracking_data, unique_tag){
           slice_max(frame_id) |> 
           mutate(which_side = ifelse(y_ball < out_right_initial$y, "left", "right"))
       }  
-      
     }else{
       # if never passes line of play
       # when the first_contact happens
@@ -616,7 +707,8 @@ define_run <- function(tracking_data, unique_tag){
         slice_max(frame_id) |> 
         mutate(which_side = ifelse(y_ball < out_right_initial$y, "left", "right"))
     }
-    
+  #################################################
+  #################################################
   }else{ # play direction right
     # reverse for opposite direction
     player_left <- line_pos |> 
@@ -638,13 +730,31 @@ define_run <- function(tracking_data, unique_tag){
     # then determine if it was to the right or left of player
     out_left_tmp <- track1 |> 
       filter(nfl_id == player_left) |> 
-      filter(frame_id >= handoff_frame) |> 
+      filter(frame_id > handoff_frame) |> 
       select(frame_id, club, play_direction, event, x, y) |> 
       left_join(football, by = join_by(frame_id, event)) |> 
       mutate(pass_player = ifelse(x_ball <= x, "no", "yes"),
              pass_initial = ifelse(x_ball <= out_left_initial$x,
                                    "no", "yes"))
     
+    ################################
+    # if "yes" is the first frame there is an error with data
+    # ball should not be ahead of linemen at snap
+    which_player_no <- which(out_left_tmp$pass_player == "no")
+    which_init_no <- which(out_left_tmp$pass_initial == "no")
+    
+    # if pass_player is not all yes and not all no
+    if(length(which_player_no) != 0 & length(which_player_no) != nrow(out_left_tmp)){
+      # keep first "no" to end of data
+      out_left_tmp <- out_left_tmp[min(which_player_no):nrow(out_left_tmp),]
+      # now if all no and initial_player is not all yes
+    } else if(length(which_player_no) != nrow(out_left_tmp) & length(which_init_no) != 0){
+      # keep first "no" to end of data
+      out_left_tmp <- out_left_tmp[min(which_init_no):nrow(out_left_tmp),]
+    }
+    ################################
+    
+    # now did rush happen left or right of that lineman
     if(sum(str_detect(out_left_tmp$pass_player, "yes")) >= 1){
       out_left <- out_left_tmp |> 
         filter(pass_player == "yes") |> 
@@ -680,9 +790,10 @@ define_run <- function(tracking_data, unique_tag){
         mutate(which_side = ifelse(y_ball > out_left_initial$y, "left", "right"))
     }
     
+    # same check for right lineman
     out_right_tmp <- track1 |> 
       filter(nfl_id == player_right) |> 
-      filter(frame_id >= handoff_frame) |> 
+      filter(frame_id > handoff_frame) |> 
       select(frame_id, club, play_direction, event, x, y) |> 
       left_join(football, by = join_by(frame_id, event)) |> 
       mutate(pass_player = ifelse(x_ball <= x, 
@@ -690,6 +801,24 @@ define_run <- function(tracking_data, unique_tag){
              pass_initial = ifelse(x_ball <= out_right_initial$x,
                                    "no", "yes"))
     
+    ################################
+    # if "yes" is the first frame there is an error with data
+    # ball should not be ahead of linemen at snap
+    which_player_no <- which(out_right_tmp$pass_player == "no")
+    which_init_no <- which(out_right_tmp$pass_initial == "no")
+    
+    # if pass_player is not all yes and not all no
+    if(length(which_player_no) != 0 & length(which_player_no) != nrow(out_right_tmp)){
+      # keep first "no" to end of data
+      out_right_tmp <- out_right_tmp[min(which_player_no):nrow(out_right_tmp),]
+      # now if all no and initial_player is not all yes
+    } else if(length(which_player_no) != nrow(out_right_tmp) & length(which_init_no) != 0){
+      # keep first "no" to end of data
+      out_right_tmp <- out_right_tmp[min(which_init_no):nrow(out_right_tmp),]
+    }
+    ################################
+    
+    # now did rush happen left or right of right lineman
     if(sum(str_detect(out_right_tmp$pass_player, "yes")) >= 1 ){
       out_right <- out_right_tmp |> 
         filter(pass_player == "yes") |> 
@@ -724,7 +853,8 @@ define_run <- function(tracking_data, unique_tag){
         mutate(which_side = ifelse(y_ball > out_right_initial$y, "left", "right"))
     }
   }
-  
+  #######################################################################
+  #######################################################################
   # organize output data
   run_calc <- tibble(
     game_id = game_tag,
@@ -742,6 +872,12 @@ define_run <- function(tracking_data, unique_tag){
       play_dir == "right" & 
         ball_initial$y > out_right$y_ball & 
         out_right$which_side == "right" ~ "right",
+      out_right$which_side == "left" & 
+        out_left$which_side == "left" ~ "left",
+      out_left$which_side == "right" & 
+        out_right$which_side == "right" ~ "right",
+      out_left$which_side == "right" & 
+        out_right$which_side == "left" ~ "middle",
       TRUE ~ "middle"
     )
   )
@@ -749,3 +885,22 @@ define_run <- function(tracking_data, unique_tag){
   return(run_calc)
 }
 
+
+run_plays_dir <- read_rds(here("data/run_plays_dir.rds") )
+
+check <- run_plays_dir |> 
+  filter(rush_loc_calc == "check")
+#2022091802_1034
+game_tag = 2022091802
+play_tag = 1034
+
+tmp_data <- track1 |> 
+  filter(frame_type == "AFTER_SNAP")
+ggplot() +
+  geom_point(data = tmp_data[tmp_data$nfl_id == 43305,],
+             aes(x = x, y = y), color = "red") +
+  geom_point(data = tmp_data[tmp_data$nfl_id == 53436,],
+             aes(x = x, y = y), color = "blue") +
+  geom_point(data = tmp_data[tmp_data$club == "football",],
+             aes(x = x, y = y), color = "black") +
+  ggtitle(unique_tag)

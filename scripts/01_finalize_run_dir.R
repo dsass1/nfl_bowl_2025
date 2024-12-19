@@ -1,7 +1,15 @@
+# manually calculate run direction
 
 library(tidyverse)
-library(nflverse)
 library(here)
+library(doParallel)
+library(parallel)
+
+# parallel processing ----
+# num_cores <- parallel::detectCores(logical = TRUE)
+num_cores <- 8
+cl <- makePSOCKcluster(num_cores)
+registerDoParallel(cl)
 
 # get function to compute left, middle, right location
 source(here("scripts/00_functions.R"))
@@ -19,7 +27,7 @@ run_plays <- read_rds(here("data/run_plays.rds")) |>
 tracking_runs <- read_rds(here("data/tracking_runs.rds"))
 ############################################################
 # calculate run direction
-run_list <- lapply(run_plays$unique_id, 
+run_list <- mclapply(run_plays$unique_id, 
                        \(x) define_run(
                          tracking_data = tracking_runs,
                          unique_tag = x) )
@@ -34,3 +42,5 @@ run_plays_dir <- run_plays |>
   left_join(run_dir_calc)
 
 write_rds(run_plays_dir, here("data/run_plays_dir.rds") )
+
+stopCluster(cl)
