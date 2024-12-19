@@ -6,7 +6,6 @@ format:
   html:
     toc: true
     toc-depth: 4
-    toc-location: left
     embed-resources: true
     number-sections: false
     link-external-newwindow: true
@@ -15,10 +14,6 @@ execute:
   message: false
   warning: false
   echo: false
-  
-from: markdown+emoji
-reference-location: margin
-citation-location: margin
 ---
 
 ```{r}
@@ -116,7 +111,7 @@ between an offensive player and the sideline. Gaps are categorized as left, righ
 based on their position relative to the outermost offensive linemen. The size of a gap is 
 calculated as the distance between the two offensive players forming it. 
 
-@fig-run-gap2 demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
+\@ref{fig:fig-run-gap2} demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
 When multiple gaps exist within a region, the largest gap is selected. The sequential offensive 
 player gap values for this play are as follows:
  
@@ -124,10 +119,10 @@ player gap values for this play are as follows:
   - `right`: 21.34
   - `middle`: 1.87
 
-```{r}
-#| label: "fig-run-gap2"
-#| fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
-#| out.width: "100%"
+```{r fig-run-gap2, fig.cap= "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."}
+# label: "fig-run-gap2"
+# fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
+# out.width: "100%"
 
 knitr::include_graphics("../input/results/03_run_gap_manual.png")
 
@@ -180,7 +175,8 @@ run_gap_table |>
 
 #### Quarterback and running back variables
 
-Additional spatial variables include the running back's (RB) and quarter back's (QB) orientation, 
+Additional spatial variables include the running back`s (RB) 
+and quarter back`s (QB) orientation, 
 the distance between the RB and QB, whether the RB is positioned to the left or right of the QB, 
 and whether the RB was in motion or shifted pre-snap. 
 
@@ -292,7 +288,8 @@ We utilized a boosted tree model to predict whether the rusher on a play runs to
 right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables 
 improved prediction accuracy over the baseline model by `r accuracy_main*100 - accuracy_base*100`%. 
 We identified a very weak relationship between gap sizes and rush direction, we also found that a 
-running back's (RB's) historical tendencies have a small, yet measurable, influence on the rush 
+running back`s 
+(RB`s) historical tendencies have a small, yet measurable, influence on the rush 
 location.
 
 Establishing a strong run game is critical for an offense as it helps open up the passing game, 
