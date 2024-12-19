@@ -1,2087 +1,336 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "b13c1036",
-   "metadata": {
-    "_execution_state": "idle",
-    "_uuid": "051d70d956493feee0c6d64651c6a088724dca2a",
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:56:56.872225Z",
-     "iopub.status.busy": "2024-12-19T19:56:56.869585Z",
-     "iopub.status.idle": "2024-12-19T19:57:00.972918Z",
-     "shell.execute_reply": "2024-12-19T19:57:00.970940Z"
-    },
-    "papermill": {
-     "duration": 4.113143,
-     "end_time": "2024-12-19T19:57:00.975720",
-     "exception": false,
-     "start_time": "2024-12-19T19:56:56.862577",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "── \u001b[1mAttaching core tidyverse packages\u001b[22m ──────────────────────── tidyverse 2.0.0 ──\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mdplyr    \u001b[39m 1.1.4     \u001b[32m✔\u001b[39m \u001b[34mreadr    \u001b[39m 2.1.5\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mforcats  \u001b[39m 1.0.0     \u001b[32m✔\u001b[39m \u001b[34mstringr  \u001b[39m 1.5.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mggplot2  \u001b[39m 3.5.1     \u001b[32m✔\u001b[39m \u001b[34mtibble   \u001b[39m 3.2.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mlubridate\u001b[39m 1.9.3     \u001b[32m✔\u001b[39m \u001b[34mtidyr    \u001b[39m 1.3.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mpurrr    \u001b[39m 1.0.2     \n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "── \u001b[1mConflicts\u001b[22m ────────────────────────────────────────── tidyverse_conflicts() ──\n",
-      "\u001b[31m✖\u001b[39m \u001b[34mdplyr\u001b[39m::\u001b[32mfilter()\u001b[39m masks \u001b[34mstats\u001b[39m::filter()\n",
-      "\u001b[31m✖\u001b[39m \u001b[34mdplyr\u001b[39m::\u001b[32mlag()\u001b[39m    masks \u001b[34mstats\u001b[39m::lag()\n",
-      "\u001b[36mℹ\u001b[39m Use the conflicted package (\u001b[3m\u001b[34m<http://conflicted.r-lib.org/>\u001b[39m\u001b[23m) to force all conflicts to become errors\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "Attaching package: ‘yardstick’\n",
-      "\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "The following object is masked from ‘package:readr’:\n",
-      "\n",
-      "    spec\n",
-      "\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\u001b[1mRows: \u001b[22m\u001b[34m2\u001b[39m \u001b[1mColumns: \u001b[22m\u001b[34m9\u001b[39m\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\u001b[36m──\u001b[39m \u001b[1mColumn specification\u001b[22m \u001b[36m────────────────────────────────────────────────────────\u001b[39m\n",
-      "\u001b[1mDelimiter:\u001b[22m \",\"\n",
-      "\u001b[32mdbl\u001b[39m (9): V1, V2, V3, V4, V5, V6, V7, V8, V9\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "\u001b[36mℹ\u001b[39m Use `spec()` to retrieve the full column specification for this data.\n",
-      "\u001b[36mℹ\u001b[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.\n"
-     ]
-    }
-   ],
-   "source": [
-    "#| include: false\n",
-    "\n",
-    "library(tidyverse)\n",
-    "library(gt)\n",
-    "library(gtExtras)\n",
-    "library(yardstick)\n",
-    "\n",
-    "predictions <- read_rds(\"../input/results/predictions.rds\")\n",
-    "run_gap_table <- read_csv(\"../input/results/run_gap_table.csv\")\n",
-    "vi_table <- read_rds(\"../input/results/vi_table.rds\")\n",
-    "\n",
-    "accuracy_main <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_main) |> pull(.estimate) |> round(3)\n",
-    "\n",
-    "accuracy_base <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_base) |> pull(.estimate) |> round(3)\n",
-    "\n",
-    "accuracy_naive <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_naive) |> pull(.estimate) |> round(3)\n",
-    "\n",
-    "#list.files(path = \"../input\")"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "02b715e5",
-   "metadata": {
-    "papermill": {
-     "duration": 0.004034,
-     "end_time": "2024-12-19T19:57:00.984117",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:00.980083",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "## Introduction\n",
-    "\n",
-    "In football, an offensive play typically involves either a pass or a rush. For a defensive team, accurately predicting the type of play offers a significant strategic advantage. For instance, anticipating a rush allows the defense to position more players in the box, while expecting a pass might prompt defenders to drop back into coverage. Prior research has demonstrated that distinguishing between pass and rush plays can be achieved with 75-80% accuracy using a limited set of variables (Joash Fernandez et al., 2020). Building on this foundation, our study focuses on enhancing the defensive advantage by predicting the direction of a rush; categorized as left, middle, or right. More importantly, we aim to incorporate novel spatial tracking variables and identify those that serve as key indicators of rush direction, providing deeper insights into offensive tendencies. "
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "015fe99a",
-   "metadata": {
-    "papermill": {
-     "duration": 0.003954,
-     "end_time": "2024-12-19T19:57:00.992124",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:00.988170",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "## Data preparation\n",
-    "\n",
-    "To predict rush direction, we use tracking, play-by-play, player, and game data from the 2022 NFL season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data from the `nflverse` package (Carl et al., 2023). Our analysis focuses exclusively on rush plays, totaling 6,183 observations. Scramble plays, while typically categorized as rushes, were excluded since they originate as pass plays and involve decisions made after the snap. This aligns with our emphasis on leveraging pre-snap information.\n",
-    "\n",
-    "### Rush direction\n",
-    "\n",
-    "Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the provided rush location types. Given the lack of detailed documentation on how rush direction was determined and to enhance prediction accuracy, we recalculated rush direction manually using the tracking data.\n",
-    "\n",
-    "At its simplest, rush direction is categorized as left, right, or middle, based on the ball carrier's path relative to the offensive linemen. Specifically, a rush is classified as:\n",
-    "\n",
-    "- `left`: if the ball carrier advances past the leftmost offensive lineman on the left,\n",
-    "- `right`: if they advance past the rightmost offensive lineman on the right,\n",
-    "- `middle`: if they advance between these two outside linemen.\n",
-    "\n",
-    "\\noindent @fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as \"inside-left,\" which corresponds to \"middle\" under this definition."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 2,
-   "id": "7408f57b",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:01.032406Z",
-     "iopub.status.busy": "2024-12-19T19:57:01.001963Z",
-     "iopub.status.idle": "2024-12-19T19:57:01.051024Z",
-     "shell.execute_reply": "2024-12-19T19:57:01.049251Z"
-    },
-    "papermill": {
-     "duration": 0.057507,
-     "end_time": "2024-12-19T19:57:01.053483",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:00.995976",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "[1] \"../input/results/01_run_definition.gif\"\n",
-       "attr(,\"class\")\n",
-       "[1] \"knit_image_paths\" \"knit_asis\"       "
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-run\"\n",
-    "#| fig.cap: \"This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen.\"\n",
-    "\n",
-    "knitr::include_graphics(\"../input/results/01_run_definition.gif\")"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "2ad5e884",
-   "metadata": {
-    "papermill": {
-     "duration": 0.004372,
-     "end_time": "2024-12-19T19:57:01.062158",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.057786",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "In more complex scenarios where the ball carrier does not advance past the offensive linemen or does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line set to determine whether the rusher moved to the left, right, or middle relative to the linemen.\n",
-    "\n",
-    "### Spatial tracking variables {#sec-spatial-var}\n",
-    "\n",
-    "Pre-snap data was used to build a predictive model. When rushing, a player looks for a gap or hole created by their teammates to run through. We aim to investigate whether pre-snap player orientation and positioning offers insights into potential gap formation, which could signal the rusher's intended direction.\n",
-    "\n",
-    "#### Sequential offensive player gap \n",
-    "\n",
-    "Assuming the offensive and defensive players near the line of scrimmage are positioned one yard away from it, we project all players positions one yard forward in the direction of their orientation. This adjustment aligns all players along the line of scrimmage. \n",
-    "\n",
-    "A gap is defined as an open space between two offensive players positioned consecutively, or between an offensive player and the sideline. Gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen. The size of a gap is calculated as the distance between the two offensive players forming it. \n",
-    "\n",
-    "@fig-run-gap2 demonstrates a play with no left gaps, two middle gaps, and two right gaps. When multiple gaps exist within a region, the largest gap is selected. The sequential offensive player gap values for this play are as follows:\n",
-    " \n",
-    "  - `left`: 0\n",
-    "  - `right`: 21.34\n",
-    "  - `middle`: 1.87"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "id": "1a5f2ed1",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:01.074139Z",
-     "iopub.status.busy": "2024-12-19T19:57:01.072492Z",
-     "iopub.status.idle": "2024-12-19T19:57:01.091467Z",
-     "shell.execute_reply": "2024-12-19T19:57:01.089801Z"
-    },
-    "papermill": {
-     "duration": 0.027303,
-     "end_time": "2024-12-19T19:57:01.093657",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.066354",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "[1] \"../input/results/03_run_gap_manual.png\"\n",
-       "attr(,\"class\")\n",
-       "[1] \"knit_image_paths\" \"knit_asis\"       "
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-run-gap2\"\n",
-    "#| fig-cap: \"Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them.\"\n",
-    "#| out.width: \"100%\"\n",
-    "\n",
-    "knitr::include_graphics(\"../input/results/03_run_gap_manual.png\")\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "6ce27bbb",
-   "metadata": {
-    "papermill": {
-     "duration": 0.00457,
-     "end_time": "2024-12-19T19:57:01.102638",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.098068",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "#### Orientation gap\n",
-    "\n",
-    "Now considering only the offensive players near the line of scrimmage, a gap is defined as an open space between two offensive players oriented away from each other, or if their is no neighboring offensive player if the player is oriented away from the sideline. If players are oriented in opposite directions the intuition is that they are trying to push the defense in opposite directions. Again, gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen and the size of the gap is the distance between the two offensive players forming it. @fig-run-gap shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. "
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 4,
-   "id": "13af406e",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:01.114574Z",
-     "iopub.status.busy": "2024-12-19T19:57:01.113014Z",
-     "iopub.status.idle": "2024-12-19T19:57:01.131742Z",
-     "shell.execute_reply": "2024-12-19T19:57:01.129831Z"
-    },
-    "papermill": {
-     "duration": 0.027299,
-     "end_time": "2024-12-19T19:57:01.134196",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.106897",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "[1] \"../input/results/02_run_gap_manual.png\"\n",
-       "attr(,\"class\")\n",
-       "[1] \"knit_image_paths\" \"knit_asis\"       "
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| out.width: \"100%\"\n",
-    "\n",
-    "knitr::include_graphics(\"../input/results/02_run_gap_manual.png\")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "id": "2642e29c",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:01.146466Z",
-     "iopub.status.busy": "2024-12-19T19:57:01.144973Z",
-     "iopub.status.idle": "2024-12-19T19:57:01.486031Z",
-     "shell.execute_reply": "2024-12-19T19:57:01.484360Z"
-    },
-    "papermill": {
-     "duration": 0.349571,
-     "end_time": "2024-12-19T19:57:01.488244",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.138673",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "Warning message:\n",
-      "“Setting row names on a tibble is deprecated.”\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_html.list(obj)\n",
-      "8. repr_list_generic(obj, \"html\", \"\\t<li>%s</li>\\n\", \"\\t<dt>$%s</dt>\\n\\t\\t<dd>%s</dd>\\n\", \n",
-      " .     \"<strong>$%s</strong> = %s\", \"<ol>\\n%s</ol>\\n\", \"<dl>\\n%s</dl>\\n\", \n",
-      " .     numeric_item = \"\\t<dt>[[%s]]</dt>\\n\\t\\t<dd>%s</dd>\\n\", escape_fun = html_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_html.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, \"<table class=\\\"dataframe\\\">\\n<caption>%s</caption>\\n%s%s</table>\\n\", \n",
-      "  .     \"<thead>\\n%s</thead>\\n\", \"\\t<tr>%s</tr>\\n\", \"<th></th>\", \n",
-      "  .     \"<th scope=col>%s</th>\", \"<tbody>\\n%s</tbody>\\n\", \"\\t<tr>%s</tr>\\n\", \n",
-      "  .     \"<th scope=row>%s</th>\", \"<td>%s</td>\", escape_fun = html_escape_vec, \n",
-      "  .     rows = rows, cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_markdown.list(obj)\n",
-      "8. repr_list_generic(obj, \"markdown\", \"%s. %s\\n\", \"$%s\\n:   %s\\n\", \n",
-      " .     \"**$%s** = %s\", \"%s\\n\\n\", numeric_item = \"[[%s]]\\n:   %s\\n\", \n",
-      " .     item_uses_numbers = TRUE, escape_fun = html_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_markdown.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, \"\\n%s\\n\\n%s%s\\n\", sprintf(\"|%%s\\n|%s|\\n\", \n",
-      "  .     underline), NULL, \" <!--/--> |\", \" %s |\", \"%s\", \"|%s\\n\", \n",
-      "  .     \" %s |\", \" %s |\", escape_fun = markdown_escape, rows = rows, \n",
-      "  .     cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_latex.list(obj)\n",
-      "8. repr_list_generic(obj, \"latex\", \"\\\\item %s\\n\", \"\\\\item[\\\\$%s] %s\\n\", \n",
-      " .     \"\\\\textbf{\\\\$%s} = %s\", enum_wrap = \"\\\\begin{enumerate}\\n%s\\\\end{enumerate}\\n\", \n",
-      " .     named_wrap = \"\\\\begin{description}\\n%s\\\\end{description}\\n\", \n",
-      " .     numeric_item = \"\\\\item[{[[%s]]}] %s\\n\", escape_fun = latex_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_latex.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, sprintf(\"%%s\\n\\\\begin{tabular}{%s}\\n%%s%%s\\\\end{tabular}\\n\", \n",
-      "  .     cols_spec), \"%s\\\\hline\\n\", \"%s\\\\\\\\\\n\", \"  &\", \" %s &\", \"%s\", \n",
-      "  .     \"\\t%s\\\\\\\\\\n\", \"%s &\", \" %s &\", escape_fun = latex_escape_vec, \n",
-      "  .     rows = rows, cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "data": {
-      "text/plain": [
-       "<div id=\"wgicztwnro\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;\">\n",
-       "  <style>#wgicztwnro table {\n",
-       "  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';\n",
-       "  -webkit-font-smoothing: antialiased;\n",
-       "  -moz-osx-font-smoothing: grayscale;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro thead, #wgicztwnro tbody, #wgicztwnro tfoot, #wgicztwnro tr, #wgicztwnro td, #wgicztwnro th {\n",
-       "  border-style: none;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro p {\n",
-       "  margin: 0;\n",
-       "  padding: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_table {\n",
-       "  display: table;\n",
-       "  border-collapse: collapse;\n",
-       "  line-height: normal;\n",
-       "  margin-left: auto;\n",
-       "  margin-right: auto;\n",
-       "  color: #333333;\n",
-       "  font-size: 16px;\n",
-       "  font-weight: normal;\n",
-       "  font-style: normal;\n",
-       "  background-color: #FFFFFF;\n",
-       "  width: auto;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #A8A8A8;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #A8A8A8;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_caption {\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_title {\n",
-       "  color: #333333;\n",
-       "  font-size: 125%;\n",
-       "  font-weight: initial;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-color: #FFFFFF;\n",
-       "  border-bottom-width: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_subtitle {\n",
-       "  color: #333333;\n",
-       "  font-size: 85%;\n",
-       "  font-weight: initial;\n",
-       "  padding-top: 3px;\n",
-       "  padding-bottom: 5px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-top-color: #FFFFFF;\n",
-       "  border-top-width: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_heading {\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-align: center;\n",
-       "  border-bottom-color: #FFFFFF;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_bottom_border {\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_col_headings {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_col_heading {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: normal;\n",
-       "  text-transform: inherit;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: bottom;\n",
-       "  padding-top: 5px;\n",
-       "  padding-bottom: 6px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  overflow-x: hidden;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_column_spanner_outer {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: normal;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 0;\n",
-       "  padding-bottom: 0;\n",
-       "  padding-left: 4px;\n",
-       "  padding-right: 4px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_column_spanner_outer:first-child {\n",
-       "  padding-left: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_column_spanner_outer:last-child {\n",
-       "  padding-right: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_column_spanner {\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  vertical-align: bottom;\n",
-       "  padding-top: 5px;\n",
-       "  padding-bottom: 5px;\n",
-       "  overflow-x: hidden;\n",
-       "  display: inline-block;\n",
-       "  width: 100%;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_spanner_row {\n",
-       "  border-bottom-style: hidden;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_group_heading {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "  text-align: left;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_empty_group_heading {\n",
-       "  padding: 0.5px;\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_from_md > :first-child {\n",
-       "  margin-top: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_from_md > :last-child {\n",
-       "  margin-bottom: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  margin: 10px;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 1px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "  overflow-x: hidden;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_stub {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-right-style: solid;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_stub_row_group {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-right-style: solid;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  vertical-align: top;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_row_group_first td {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_row_group_first th {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_summary_row {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_first_summary_row {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_first_summary_row.thick {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_last_summary_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_grand_summary_row {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_first_grand_summary_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-top-style: double;\n",
-       "  border-top-width: 6px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_last_grand_summary_row_top {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-style: double;\n",
-       "  border-bottom-width: 6px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_striped {\n",
-       "  background-color: rgba(128, 128, 128, 0.05);\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_table_body {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_footnotes {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  border-bottom-style: none;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_footnote {\n",
-       "  margin: 0px;\n",
-       "  font-size: 90%;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_sourcenotes {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  border-bottom-style: none;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_sourcenote {\n",
-       "  font-size: 90%;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_left {\n",
-       "  text-align: left;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_center {\n",
-       "  text-align: center;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_right {\n",
-       "  text-align: right;\n",
-       "  font-variant-numeric: tabular-nums;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_font_normal {\n",
-       "  font-weight: normal;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_font_bold {\n",
-       "  font-weight: bold;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_font_italic {\n",
-       "  font-style: italic;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_super {\n",
-       "  font-size: 65%;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_footnote_marks {\n",
-       "  font-size: 75%;\n",
-       "  vertical-align: 0.4em;\n",
-       "  position: initial;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_asterisk {\n",
-       "  font-size: 100%;\n",
-       "  vertical-align: 0;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_indent_1 {\n",
-       "  text-indent: 5px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_indent_2 {\n",
-       "  text-indent: 10px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_indent_3 {\n",
-       "  text-indent: 15px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_indent_4 {\n",
-       "  text-indent: 20px;\n",
-       "}\n",
-       "\n",
-       "#wgicztwnro .gt_indent_5 {\n",
-       "  text-indent: 25px;\n",
-       "}\n",
-       "</style>\n",
-       "  <table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
-       "  \n",
-       "  <tbody class=\"gt_table_body\">\n",
-       "    <tr><th id=\"stub_1_1\" scope=\"row\" class=\"gt_row gt_left gt_stub\">player</th>\n",
-       "<td headers=\"stub_1_1 V1\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">1</td>\n",
-       "<td headers=\"stub_1_1 V2\" class=\"gt_row gt_right\">2</td>\n",
-       "<td headers=\"stub_1_1 V3\" class=\"gt_row gt_right\">3</td>\n",
-       "<td headers=\"stub_1_1 V4\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">4</td>\n",
-       "<td headers=\"stub_1_1 V5\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">5</td>\n",
-       "<td headers=\"stub_1_1 V6\" class=\"gt_row gt_right\">6</td>\n",
-       "<td headers=\"stub_1_1 V7\" class=\"gt_row gt_right\">7</td>\n",
-       "<td headers=\"stub_1_1 V8\" class=\"gt_row gt_right\">8</td>\n",
-       "<td headers=\"stub_1_1 V9\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">9</td></tr>\n",
-       "    <tr><th id=\"stub_1_2\" scope=\"row\" class=\"gt_row gt_left gt_stub\">orientation</th>\n",
-       "<td headers=\"stub_1_2 V1\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">7.83</td>\n",
-       "<td headers=\"stub_1_2 V2\" class=\"gt_row gt_right\">1.01</td>\n",
-       "<td headers=\"stub_1_2 V3\" class=\"gt_row gt_right\">−9.96</td>\n",
-       "<td headers=\"stub_1_2 V4\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">−20.90</td>\n",
-       "<td headers=\"stub_1_2 V5\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">5.85</td>\n",
-       "<td headers=\"stub_1_2 V6\" class=\"gt_row gt_right\">14.42</td>\n",
-       "<td headers=\"stub_1_2 V7\" class=\"gt_row gt_right\">−13.65</td>\n",
-       "<td headers=\"stub_1_2 V8\" class=\"gt_row gt_right\">−11.90</td>\n",
-       "<td headers=\"stub_1_2 V9\" class=\"gt_row gt_right\" style=\"background-color: rgba(240,228,66,0.5); font-weight: bold;\">−25.28</td></tr>\n",
-       "  </tbody>\n",
-       "  \n",
-       "  \n",
-       "</table>\n",
-       "</div>"
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-run-gap\"\n",
-    "#| fig-cap: \"Orientation gaps for the play are highlighted in yellow, either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right.\"\n",
-    "\n",
-    "rownames(run_gap_table) <- c(\"player\", \"orientation\")\n",
-    "\n",
-    "run_gap_table |>\n",
-    "  gt(rownames_to_stub = T) |>\n",
-    "  fmt_number(rows = \"player\",\n",
-    "             decimals = 0) |>\n",
-    "  fmt_number(rows = \"orientation\",\n",
-    "             decimals = 2) |>\n",
-    "  tab_style(\n",
-    "    style = list(\n",
-    "      cell_fill(color = \"#F0E442\", alpha = 0.5),\n",
-    "      cell_text(weight = \"bold\")\n",
-    "      ),\n",
-    "    locations = cells_body(\n",
-    "      columns = c(2, 5, 6, 10)\n",
-    "    )\n",
-    "  ) |>\n",
-    "  tab_options(\n",
-    "    column_labels.hidden = TRUE\n",
-    "  )"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "6911b63d",
-   "metadata": {
-    "papermill": {
-     "duration": 0.005288,
-     "end_time": "2024-12-19T19:57:01.499061",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.493773",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "#### Quarterback and running back variables\n",
-    "\n",
-    "Additional spatial variables include the running back's (RB) and quarter back's (QB) orientation, the distance between the RB and QB, whether the RB is positioned to the left or right of the QB, and whether the RB was in motion or shifted pre-snap. \n",
-    "\n",
-    "We also incorporate the RB's historical tendencies. For all games prior to the current week, we calculate the percentage of runs directed left, right, or middle by the RB. If multiple RBs participated in the play, we use the average of their tendencies. Similarly, we consider game-specific tendencies by calculating the percentage of runs to the left, right, and middle for all plays in the current game leading up to the play being analyzed.\n",
-    "\n",
-    "\n",
-    "### Other predictor variables {#sec-other-var}\n",
-    "\n",
-    "In addition to the spatial variables we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.\n",
-    "\n",
-    "## Model\n",
-    "\n",
-    "We employed a boosted tree model to predict a play's rush direction, using v-fold cross-validation with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set (weeks 7 – 9). To address the severe class imbalance in rush direction (`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced dataset and mitigate overfitting.\n",
-    "\n",
-    "All variables discussed in [Spatial tracking variables] and [Other predictor variables] were included in the model. See the [Appendix] for details on tuning specifications and optimal parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, as shown by the 830 plays predicted correct out of 1,955 plays in @fig-conf-mat."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 6,
-   "id": "089bbe92",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:01.513227Z",
-     "iopub.status.busy": "2024-12-19T19:57:01.511563Z",
-     "iopub.status.idle": "2024-12-19T19:57:02.066496Z",
-     "shell.execute_reply": "2024-12-19T19:57:02.064747Z"
-    },
-    "papermill": {
-     "duration": 0.564358,
-     "end_time": "2024-12-19T19:57:02.068665",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:01.504307",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "image/png": "iVBORw0KGgoAAAANSUhEUgAAA0gAAANICAIAAAByhViMAAAABmJLR0QA/wD/AP+gvaeTAAAg\nAElEQVR4nOzddZyU5d7A4Xu26ZZGFCUEQRBMxMBCUVCxMFCPB7tbjt2+x0QUsAMEu0VRURQl\nRMRAFAGlDLp32Zj3DxSXEBeOuwu31/XXzD3PjL/5uJ/hO888z0wimUwGAAA2fymlPQAAAH8P\nYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQ\nCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcA\nEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEIm00h5gszdo\n0KDSHgE2xowZM0p7BNhIHTt2LO0RYCO1bt26WB/fHjsAgEgIOwCASAg7AIBICDsAgEgIOwCA\nSAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsA\ngEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7\nAIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgI\nOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBI\nCDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCA\nSAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsA\ngEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7\nAIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgI\nOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBI\nCDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCA\nSKSV9gD8Ey3/9eunB7/y2ddTFizJKV+tdrt9unQ/ZNcyKYl1bvz+fde88fNWt9940qqVnz8f\n+tTL7078YVZ2fmqNelu33++II/beroRG5x9vzsRPXntv5JRZv67IT61Ss16b3fbbb6dGq24t\nyJ37/mtvfzV5yk/zc2rUa7TngYftuFXFP3uoMQP7DJ9T96Jzu5bI4PCbL++/+Z06x1/QtcEf\nS8nc9u12XVZQUHizRErm2E8/WXV10ffD77rv8Q/HTVycl75lsx2P7nnhETvVLbGZKTphR0nL\nWTjusovvmFOQuWOHPRtWTpn61cfvDOo9+tPv77/+xNS10m7OmIf7jfgus0KVVSsLJjxz8e0v\npVZo0GHfzpVSsieMfP+5/jdMWnTz5V22KtGnwT/SoslD/u+R91LL1m67y17lU3Imjx/99rN9\nf1x63ql71wshJAtyBt559xdz85q23XWv7ZITx4wa3Pf2pedf2aF22bUfav5XLzwz7of0cn+a\nfVAcCnJ/ueaplxKdOxcOuxVLxi4rKKjWZs+2NbJWLSZS/iiEhZOePey42xanbHHAod1qZywZ\n8cbrN5/54ZwHXj+tXY0SnZ4i2JzCrvthXXbpM+DcOuX/bINlP79/zdWPTF1S67mBt4cQlvw0\nY3HWFrWrZJTgjPy1T+7qPycveew1dxzSpHIIIRzV/b17Lnhw5Jv9vz30jKaVC2+Zu2ziDb2H\nrXH35/sMCRn1brr3pnqZqSGE5FFdbup5zlfP37Xi0HsyEuve5wd/l3ee/iiRXuu8K8+tmZEa\nQkgesHf/626e9PYTuXtdkZ5IzPn0ifFzsrc/6uIT29UMIey7z47/vb7324+80aFXtzUeJ2/5\n1L4DRpXCE+AfrCB36ZRvPn+uz/U/ZOet8T54xaKPQgjt/3PtNQ0rrfO+t51596JElftefn6X\nmmVCCKedecLFXbo/eum1p7zXJ93r7iYmqmPsvu3zxE9lDrrv3itWXv3w2ktvHDSldEdibW/8\nsDiz8n6/VV0IIaTs8a+TQwgTX5+52nbJ/MHX37mkeod2FTIKrS18b352pUbHrqy6EEIitdJh\nTSvn587+bnleiYzPP1cyf/GoRSvK1++0supCCInUCh0bVijIm/9Ddn4IYfTQaakZNY9tW3Pl\nralZ9Y5sXT1nwagvl+au8UBv9n18eZW2Lcqll+wz4J8rP+fHXXbtcNRJ5zwzZvbaty76blII\n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\nK+1VLvWTma8OWb59999+AS+Z/+lLI0MIrdtUDSG027/BsGe+e+6z2cfuWCOEUJA3/4VRszMr\ntWtVLj2EUL7hzvs1XO0B53z8/pxkzf3226+knwkUkllpn3nf3zrklhv/tVef+hkpIYRkwbLB\n1/ZLJFJPOea3bzL+8bF7Hv2l7FbtX9m+fHoIYfnsj//z5rQqzc7ataKfANjkbH5hF0LofPVd\nOf3ve7bvbfNz0+tt3fLCW3rtUH4de2uad9k555HeZ1zcYdDDF5T8kKzTisWjZ+bkl636a7++\nfde4qXKTrsfsXWud91olJb3apUe3+M/Aj8++cP4+7ZuXyV/6/ecjPv9xUf0OPQ+uXqbYpoYQ\nQkhJq/yvA7e99/XPb7pt0S5ttsnMXz7t288mzlpaa8cjO1TODCFU3/H4Hd69edwzvRMz2jes\nkTnh43dn5qYcckbn0h4c1iclrUqfSw/udtOrRx98fJeD21cMi74YMWTU5EW79ey3X5XfDpU5\n7rZTnjz+3p5dTzy8y16JeVM+eGvYgrSGve87vnQnZ50SyWSytGfYvA0aNKi0R9icLP2p/6kX\nrvkrYSvV2fPaO05vsvZ6n9NOGpPc4bH+569a+Xb4Cy+8/dHkmXOyC9K2qLvVLnt3PnK/1k4z\n3FAzZswo7RE2Sz98+s47H3827df5KwpSq9as12qnPffftdmqP7/8FbOHvvjqpxOmLMlNVKvb\nqEOnw3beet2/0RRCePq6Xl8mm9587QklM3lMOnbsWNojbK5yl36x8x4nbdXtseevbFl4feqI\n5/o88cLYCT8szUutt23LLsed0eOAFoU3+OXzN26/98nPJ01dkVFlh932O+2Cs1pUdebExmjd\nunWxPr6w+18JOzZTwo7Nl7Bj81XcYefL+gEAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh\n7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAi\nIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAA\nIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewA\nACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHs\nAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh\n7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAi\nIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAA\nIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewA\nACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHs\nAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAiIewAACIh7AAAIiHsAAAikVbaA2z2\nWrZsWdojwMYYNmxYaY8AG6lTp06lPQJsouyxAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMA\niISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLAD\nAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISw\nAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiE\nsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCI\nhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMA\niISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLAD\nAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIhLADAIiEsAMAiISwAwCIRNoGbT1vxpTZS3PX\nXm/SpMnfNA8AABupqGGXPeedI9of/ca389Z5azKZ/PtGAgBgYxQ17Pp3OeHNSYs7n3H5gS0b\npiWKdSQAADZGUcPuxjGztz76hVfvP7RYpwEAYKMV6eSJZP7i2bn5Wx7dsrinAQBgoxUp7BKp\n5feqnDXlsU+LexoAADZaEb/uJDHotRtWvHn8STc8/svSvOKdCACAjVLUY+y6Xf5yzdrpj199\n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\n2J16HN51v6vP/vTOvlMX5leq2ei4i69qNOOFOx5/+5flKVvvsNfVl51aMTXRrUuXg/o/fUrN\nsiGE7Dnj+98/6POJk5an1Wh/aI/Kvz/On60Xlsyb9/xD/YeP+3bm/BV1GrXs2qNnx6ZVNmxc\nillKRq1+Dz4UQsjPntzzrJv/bLMvHzntqe8T97575ZDD3giFXotmj5idSMnYOWvhsCFvzfh1\nSeW623bYq22lVG8ZKQGJPffaK6Piap9RLF+RHxIplVJTCrJ/DiGUqVuu8K2Z1WqFMG3GzOVt\nmmSEUPDNstyMSq3SCr2/rdKiRpi44Nv5K7aqLewoRinptfr2fzCEkJ89+bSzb1nnNl8+cvqT\n34d737lyyOFvhtULsE2D8s+M/faj+Tntf3tTXTDs419TUsu3rbCOsyopXSX0UvLSzS+eeumN\nrWqmvHLH9Q9cfk7Vlntdet0diTnjrr6x//99fMgNe9RatWUyb+4159wwo0a70y+4pnJy3ssP\n3z187vI6f76+hievOH/I8uY9/31h/YqJiZ+8fu/lp+Xf/9j+dX47Nvm777577rk/Pto7/vjj\nGzRoUOxPntUlUrJ22WWXEELu0qw/22bxtBdPvmf03v95ca/qWUNWv2n6Z/MTiYxj9jrgh8W5\nK1eyqja7uu9DXZqvM/Xhb5NIyWrcuPHKy3krcrKzl/067dsPfllWudE+5VMTuWkVQwjZv2aH\nbSquukve0nkhhOxfskOTSgUrfl1RkKxUvWLhx0zLqh3CpGWzlofaTqGgGBV64V33DrYl0148\n5Z7Re//nhbVfdUMI+97z3x0PO+28Q47tftwhdSsUfPn+C6/8mHPUtQMbFjqfkk3E+sKudevW\niZTMz8aOXHl5PVuOGzdu/f+ZRqdeeWDbuiGEo05v/MZlY6+5oseWmamhYZ3Dqz85/OuFoVDY\nzf6sz7fZWf+9/eJtslJDCE2alTn6+JvWs15Y9tyXn/9u4U0DL2xRLj2E0Khxi/xRxw164Ov9\nb2i3coOZM2e+8MILq7Y/4IADhN0mqCBv3mUn3FSu5el3H7XN2reOmJedLMje5vjbHunRsWLu\n/LHvDbzihsev7tFjh49e2DLLSwwl5MPBAyYtzwshlKnZvOve24QQ0ss0rZY+cv7E9+e27VYt\nIyWEkCxYNua9aSGE/Oz8EEJBwdIQQlq51V51E6llQwh5y/JK/BnAHwry5ivazwQAACAASURB\n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\n3z4ZAAAbJLGeY+YSicSf3bSGf/KBdxMmTCjtEWBj3HPPPaU9Amykc889t7RHgI3UvHnzYn38\n9e2xe+2114r1vw0AwN9ofWF38MEHl9gcAAD8j5w8AQAQCWEHABAJYQcAEAlhBwAQCWEHABAJ\nYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQ\nCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcA\nEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEH\nABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlh\nBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJ\nYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQ\nCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQCWEHABAJYQcAEAlhBwAQibTSHmCzV7ly\n5dIeATbGbrvtVtojwEb6+eefS3sE2EjNmzcv1se3xw4AIBLCDgAgEsIOACASwg4AIBLCDgAg\nEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4A\nIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIO\nACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLC\nDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACAS\nwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAg\nEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4A\nIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIO\nACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLC\nDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACAS\nwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAgEsIOACASwg4AIBLCDgAg\nEsIOACASaaU9AP9on91++Wv1T7v62K02aIMl00bcfGufoR+P/3X+8ip1tj7wuLP/c0aX8qmJ\n4p8XQvbsb5597vVx30xduHRFuaq1dtzr4KM77ZyVkgghhGTe6f/6d3ZBsvD2iUTGo4/2DyHk\nLv3i32fduc7HzKy4W797exb/7BBCCN88es/wWt1O61S38OLiHz7p9/AzI7+ctCQvvV7jll1P\nOKNz61orb1qxeNRBh/Va50NlVd73tecuL/aJ2RCbetgdeuihXR8cdErNsuvZpsfhXVv2fvKi\nuhXWWF/y04zFWVvUrpJRnAOy8fJzfzq//9Mp3Y78s7Bb5wbLZ7+7716nzMwvs9+RR7fYIvXL\nD1968paz3hwybuyr16VJO4rZikXj/3PlvXMLMlrvvkeDyik/fj1y2LN9x3425a7/dE9NhLzl\n32YXJCs1ad208h8vO4lE6soLKWmVd95557UeMv/T0WMzqzcoqWfAP11B3uzbn3szsf9+hcNu\n8ZRXTzqz95KU6nsfcMgW6UvHvPvOPZeOmnf7gBNbVwshpKRX33vvvdd8oGTehx98VKZWo5Ic\nnqLY1MOuU6dOTcts5JAfXnvpaztc3eeMpn/vSPzvCnIXf/fFmCduu3jy8rxtN3CDV/598YwV\nyStfHH5muy1CCOHSXgNO3+PSVx+6ePRZd++8RfHPzj/aqN6Pzs1LHnnlrQdtWymEEA4/6oP7\nL3t09NuPTjro1MaVc5eODyG0PPnUf9Uqt/Z9UzMbnHHGGWssznj3zjFjK59xUcfin51/umTe\nsh+/++qVR++YnpO3xjuJ3pf3Wxwq3/L4IzvWyAohnHjykdedePqg6/+v+wu3piVCWlajXr3W\n3GP3wyu9PhhR7cpbupTU+BTVpht2+TlLUzPLrf06yOYuL3tKo2075K3+cVXRN+j/9byyW5z4\nW9WFEEJqt1tvvPTVE0b1mxSEHcXsrWmLMyvt81vVhRBCym49Tnh09J3fDvkpNK68dNr0EMIO\n5dOL+Gh5y7+9/emvtj/uxmblinoX2Dj5OTMO7nxyXnIdr6s5C4e/Ny+7/oE3r6y6EEJamfrn\nXLxD916jBv+67Lh1fWKWu/SLS+4f0+6sB1tX8JnYJmeTC7vuh3Xp3v/hXx+5a9hXZZ588j/d\nunQ5qP/Tp9Qsm5897bF7HvrkiwnLM2sfdNKFEx+4pN5dj5/2+9vigrz5j99yw5ufTUopW32X\nA08599hd+5101OvzssNPlx45Yvdnn7qsdJ8UhaVm1B7w9KAQQt7y74476aoN26AgO1l3qxbN\nDi68lpJWNYSQuzSv+GaGEEJIrkhWq9mgftvCa4nU8iGE/Oz8EMKCrxYmEmnbZSwZN/qb2fOX\nl69Rt1WrpuX+/OjPYb37rqi02zl71SnuwSElo8Ytt98eQsjP/vHyq+4rfFPu0i9DCFXaVC+8\nWH7r7UMYNWbcvOMOXEfYvXbtzTlV97uu85bFOTIbaZMLuxDCiN7XterQ45YehT+5Tz508RXD\n03Y879KbsnJmDux96aRlufUK3Tz2hqs6HX3Wf0+uO33UM7c8fEvt/Qb/q/+Ttc4+acj2V9zd\ns9mqzWbNmjVy5MhVV/fYY48aNWoU/xNiNYmUMu3btw8h5C4ps8EbpGS99/77a6xNffm2EEKz\nHn96Bgb8PRIZN9188xprv456PoRQr2PNEMKv3y0OKenXnXfpz8t/e5uRUXHLEy+8pH3D8ms/\n2NIZrw6YML/LdUc7NpQSkEhktm7dOoSQtyxzjZtSM+uEEBZNWBj2+eM9Rs6cKSGEhRMWhgPr\nrbH94qkD+4ybc0Lfnv50N02bYtgtrPnvY/ZtWXhl2exn35i+9JoB57Qpnx5Cky2v/eGEC14q\nvEGVVhf22K9VCKFelwvqPjX8m3k5R1avnJFIpKRlZGb+8RnHt99+e3Oh1+V+/foJu83dxDd6\nH37lR2W36Nh7//qlPQv/ODPGvnbLExMyK7U6bYfqIYSvFq8IBSvq7n/aZQe0KZu/+LvP3un/\nxFuP3nLLtr2vr5mRusZ9X7jnjXK1Dj5syzXP+oISllX1oEZl+v345u2TT36wUbm0EEIyb+4j\nt44OIeQuWLH29o9ePbhC/WN6bFNp7ZvYFGyKYVe745r/Qs//8rPUrEZtfj9ypUL9g0NYLezq\nHvjHDuGKqX/65Xzp6ekVK1ZcdTU1dc2XWjYjy3/9/PZeV/R/44vy9fd84rX+lb15pAStWDD1\nhScfHzL2h6zqLS64+qyVn7fu+e+zdkvbokWzlV8SUW37PY/ulTL98oe/emTU7Cv2qFX47oun\nPffu7OUHXHNgacwOq0kkMq+9qFOPm147+7gz999/58qJJZ+9P3RamS1D+DY1c81/JRdOfviV\nn5Yecf+RpTIqRbEphl3ZCmtOlVxREEKhf7YTa/6plSlbpERr3779e++9979Nx6Yg+d5DV194\n4+Nzk+UOP/e26y7qXjXNV21TYpJfvD3goWfeW5zM2vWQHt277lXh96Pommzfco1Nq7c7PDz8\n1S8f/BpWD7sRD32QXrbZUQ3trmOTUHuv8x7O2LL/C++OfPv5ZYkKrdof/9DJNY896qaMGmt+\nbjv09jcyyrfuua3ddZuuTTHs1lZ5++3ys18evzS3Vbn0EMLSGa+X9kSUnmRev3MOuP7FiQ33\nOumh23u1rbu+7ziEv1kyf0i/awaNnFFz+47nnnTUNtXW/GdvDanpNUMIBXkFhRfzlk98dvqS\nup2P8aXabDrq79b1ht26rrq6eNpdIYRqbasW3iZ36RcPTlnU8Nie/nQ3ZZvHfo7ydU88sEHZ\n/17zwNivv58w9oP/u2VcKMLoKYmw/JdZ8+cvKoEJKTETHjju+hcn7nF2vw8H3KTqKGHT37xj\n0MgZzQ8+69aLTlij6nIWDrvuuuseGjW78GLu0rEhhMotqxRe/HXEc/nJ5L77rrYPD0rR0Dfe\neOu9HwqvTH7mixBCt20rF16cNfSh/GSya1cHNG/SNo+wCyHltDvu2q/GL/fecPltD72xb69L\nQgiV/urTt+Zdds75uvcZFz9cIhNSIgpyzrxzZPk6Jw+8ovPm8rdLPJK5D7z0bVbVfS8+st3a\nOywyyrddNH3aqCce+yX3t/1zyYLsdx56KZFIPWS/2oW3/PStWWlZDfao9Bd7+6DEzBjc/87/\nu+Kb3780KnvumFvenVmp8cltK6z2DYsfPT8trUyjA6tmlcaMFNUm91HswBdfLnz1uZdfDiHk\nr5gxZOj4gy+68cS0RAghe96QRCKxY/nfvhfx8RdWO5HitkHPr7xQr9N5AzqdVxJDU1Ky578x\naXlehdrTLrrggjVu2mKnc6/489+chf/diiVjZ63IL5Mx++GHHlrjpkqNDzmyQ82Ljt+11+Mj\nrrroug67tyoblk7+YuTXM5du3+WydoW+xDWZv/jNecvLNjjYZ1lsOo64qvtzZzx4cY+zDjpw\n98SCHz8ZNmJhWv1bbulWeJtk3sLBvy6t0OgYf7qbuE0u7NYpJbXSu088/OHcshd32Skt55dn\n7nq64lZHN8pyTus/Ts7CESGExVPefWbKmjc1Ct2FHcUqd+mEEMLyn8d/9POaN9UKex7ZoWad\nvU69qWqj5998f+T7Q5bnp9aov83RZ3TttPNqP6a5bPZry/OTdXZd87vBoBRV3Oaox+6qdt+D\nz7z3ytO56ZVbdOja67STm66+U3nJzwOX5Se37OhldlOXSK7rB0Y2QUunj+hz/6Dxk2fmplRo\nsmOHU885actNI+xmzZpV2iPAxhg6dGhpjwAbqV49ZczmqmPH4v1t6M1jj10IoVz93S+9ZffS\nngIAYNPlAHQAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsA\ngEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7\nAIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgI\nOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBI\nCDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCA\nSAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsA\ngEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7\nAIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgIOwCASAg7AIBICDsAgEgI\nOwCASAg7+P/27j4qqjIP4PhzZwYGhjcRRBOJbFpN0yS0l61WOSMmmoKZ5UslVqTp5m6yiFAJ\nKiLH9YXEt+SI+S7aqlnH1s2yllZad1Nzdy3NNT0LpKSAIjDDyzD7BzohIggid3j4fv5i7r3M\n+c0599z5MnfuBQAASRB2AAAAkiDsAAAAJEHYAQAASIKwAwAAkARhBwAAIAnCDgAAQBKEHQAA\ngCQIOwAAAEkQdgAAAJIg7AAAACRB2AEAAEiCsAMAAJAEYQcAACAJwg4AAEAShB0AAIAkCDsA\n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\nif8DyuIKyPYw0z4AAAAASUVORK5CYII="
-     },
-     "metadata": {
-      "image/png": {
-       "height": 420,
-       "width": 420
-      }
-     },
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-conf-mat\"\n",
-    "#| fig-cap: \"Confusion matrix of prediction results.\"\n",
-    "# Visualize confusion matrix\n",
-    "predictions |> \n",
-    "  conf_mat(rush_loc_calc, .pred_class_main) |> \n",
-    "  autoplot(type = \"heatmap\")"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "62841623",
-   "metadata": {
-    "papermill": {
-     "duration": 0.006003,
-     "end_time": "2024-12-19T19:57:02.080642",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.074639",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a naive strategy of always predicting \"middle\" could yield higher accuracy (`r accuracy_naive*100`%) due to the class imbalance, such an approach would provide no insights into variable importance. The accuracy of `r accuracy_main*100`% is certainly better than that naive approach on a balanced dataset (33.3%).\n",
-    "\n",
-    "To evaluate whether the novel spatial tracking variables contribute meaningful insights into rush direction, we compared our model's performance to a baseline model. The baseline model, also a tuned boosted tree, was built using only the variables described in [Other predictor variables]. Its accuracy on the testing set was `r accuracy_base*100`%.\n",
-    "\n",
-    "## Insights\n",
-    "\n",
-    "Including spatial tracking variables improves prediction accuracy by `r accuracy_main*100 - accuracy_base*100`%. To better understand the impact of these variables, we examine their importance as determined by the boosted tree model.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 7,
-   "id": "c27f66bb",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:02.095806Z",
-     "iopub.status.busy": "2024-12-19T19:57:02.094120Z",
-     "iopub.status.idle": "2024-12-19T19:57:02.236050Z",
-     "shell.execute_reply": "2024-12-19T19:57:02.233777Z"
-    },
-    "papermill": {
-     "duration": 0.152531,
-     "end_time": "2024-12-19T19:57:02.238956",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.086425",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_html.list(obj)\n",
-      "8. repr_list_generic(obj, \"html\", \"\\t<li>%s</li>\\n\", \"\\t<dt>$%s</dt>\\n\\t\\t<dd>%s</dd>\\n\", \n",
-      " .     \"<strong>$%s</strong> = %s\", \"<ol>\\n%s</ol>\\n\", \"<dl>\\n%s</dl>\\n\", \n",
-      " .     numeric_item = \"\\t<dt>[[%s]]</dt>\\n\\t\\t<dd>%s</dd>\\n\", escape_fun = html_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_html.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, \"<table class=\\\"dataframe\\\">\\n<caption>%s</caption>\\n%s%s</table>\\n\", \n",
-      "  .     \"<thead>\\n%s</thead>\\n\", \"\\t<tr>%s</tr>\\n\", \"<th></th>\", \n",
-      "  .     \"<th scope=col>%s</th>\", \"<tbody>\\n%s</tbody>\\n\", \"\\t<tr>%s</tr>\\n\", \n",
-      "  .     \"<th scope=row>%s</th>\", \"<td>%s</td>\", escape_fun = html_escape_vec, \n",
-      "  .     rows = rows, cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_markdown.list(obj)\n",
-      "8. repr_list_generic(obj, \"markdown\", \"%s. %s\\n\", \"$%s\\n:   %s\\n\", \n",
-      " .     \"**$%s** = %s\", \"%s\\n\\n\", numeric_item = \"[[%s]]\\n:   %s\\n\", \n",
-      " .     item_uses_numbers = TRUE, escape_fun = html_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_markdown.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, \"\\n%s\\n\\n%s%s\\n\", sprintf(\"|%%s\\n|%s|\\n\", \n",
-      "  .     underline), NULL, \" <!--/--> |\", \" %s |\", \"%s\", \"|%s\\n\", \n",
-      "  .     \" %s |\", \" %s |\", escape_fun = markdown_escape, rows = rows, \n",
-      "  .     cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "ERROR while rich displaying an object: Error in names(res) <- prefix: 'names' attribute [1] must be the same length as the vector [0]\n",
-      "\n",
-      "Traceback:\n",
-      "1. tryCatch(withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler), error = outer_handler)\n",
-      "2. tryCatchList(expr, classes, parentenv, handlers)\n",
-      "3. tryCatchOne(expr, names, parentenv, handlers[[1L]])\n",
-      "4. doTryCatch(return(expr), name, parentenv, handler)\n",
-      "5. withCallingHandlers({\n",
-      " .     if (!mime %in% names(repr::mime2repr)) \n",
-      " .         stop(\"No repr_* for mimetype \", mime, \" in repr::mime2repr\")\n",
-      " .     rpr <- repr::mime2repr[[mime]](obj)\n",
-      " .     if (is.null(rpr)) \n",
-      " .         return(NULL)\n",
-      " .     prepare_content(is.raw(rpr), rpr)\n",
-      " . }, error = error_handler)\n",
-      "6. repr::mime2repr[[mime]](obj)\n",
-      "7. repr_latex.list(obj)\n",
-      "8. repr_list_generic(obj, \"latex\", \"\\\\item %s\\n\", \"\\\\item[\\\\$%s] %s\\n\", \n",
-      " .     \"\\\\textbf{\\\\$%s} = %s\", enum_wrap = \"\\\\begin{enumerate}\\n%s\\\\end{enumerate}\\n\", \n",
-      " .     named_wrap = \"\\\\begin{description}\\n%s\\\\end{description}\\n\", \n",
-      " .     numeric_item = \"\\\\item[{[[%s]]}] %s\\n\", escape_fun = latex_escape)\n",
-      "9. lapply(vec, format2repr[[fmt]])\n",
-      "10. FUN(X[[i]], ...)\n",
-      "11. repr_latex.data.frame(X[[i]], ...)\n",
-      "12. repr_matrix_generic(obj, sprintf(\"%%s\\n\\\\begin{tabular}{%s}\\n%%s%%s\\\\end{tabular}\\n\", \n",
-      "  .     cols_spec), \"%s\\\\hline\\n\", \"%s\\\\\\\\\\n\", \"  &\", \" %s &\", \"%s\", \n",
-      "  .     \"\\t%s\\\\\\\\\\n\", \"%s &\", \" %s &\", escape_fun = latex_escape_vec, \n",
-      "  .     rows = rows, cols = cols, ...)\n",
-      "13. ellip_limit_arr(flatten(x), rows, cols)\n",
-      "14. arr_parts_format(parts)\n",
-      "15. structure(lapply(parts, arr_part_format), omit = attr(parts, \n",
-      "  .     \"omit\"))\n",
-      "16. lapply(parts, arr_part_format)\n",
-      "17. FUN(X[[i]], ...)\n",
-      "18. arr_part_unpack_tbl(part)\n",
-      "19. mapply(tbl_col_format, tbl, names(tbl), SIMPLIFY = FALSE, USE.NAMES = FALSE)\n",
-      "20. (function (col, prefix = \"\") \n",
-      "  . {\n",
-      "  .     if (is.data.frame(col)) {\n",
-      "  .         res <- mapply(tbl_col_format, col, names(col), SIMPLIFY = FALSE, \n",
-      "  .             USE.NAMES = FALSE)\n",
-      "  .         res <- do.call(cbind.data.frame, res)\n",
-      "  .         names(res) <- paste0(prefix, \"$\", names(res))\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  .     else {\n",
-      "  .         res <- data.frame(col)\n",
-      "  .         names(res) <- prefix\n",
-      "  .         return(res)\n",
-      "  .     }\n",
-      "  . })(dots[[1L]][[7L]], dots[[2L]][[7L]])\n"
-     ]
-    },
-    {
-     "data": {
-      "text/plain": [
-       "<div id=\"hxpdwjxwnm\" style=\"padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;\">\n",
-       "  <style>#hxpdwjxwnm table {\n",
-       "  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';\n",
-       "  -webkit-font-smoothing: antialiased;\n",
-       "  -moz-osx-font-smoothing: grayscale;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm thead, #hxpdwjxwnm tbody, #hxpdwjxwnm tfoot, #hxpdwjxwnm tr, #hxpdwjxwnm td, #hxpdwjxwnm th {\n",
-       "  border-style: none;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm p {\n",
-       "  margin: 0;\n",
-       "  padding: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_table {\n",
-       "  display: table;\n",
-       "  border-collapse: collapse;\n",
-       "  line-height: normal;\n",
-       "  margin-left: auto;\n",
-       "  margin-right: auto;\n",
-       "  color: #333333;\n",
-       "  font-size: 16px;\n",
-       "  font-weight: normal;\n",
-       "  font-style: normal;\n",
-       "  background-color: #FFFFFF;\n",
-       "  width: auto;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #A8A8A8;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #A8A8A8;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_caption {\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_title {\n",
-       "  color: #333333;\n",
-       "  font-size: 125%;\n",
-       "  font-weight: initial;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-color: #FFFFFF;\n",
-       "  border-bottom-width: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_subtitle {\n",
-       "  color: #333333;\n",
-       "  font-size: 85%;\n",
-       "  font-weight: initial;\n",
-       "  padding-top: 3px;\n",
-       "  padding-bottom: 5px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-top-color: #FFFFFF;\n",
-       "  border-top-width: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_heading {\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-align: center;\n",
-       "  border-bottom-color: #FFFFFF;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_bottom_border {\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_col_headings {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_col_heading {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: normal;\n",
-       "  text-transform: inherit;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: bottom;\n",
-       "  padding-top: 5px;\n",
-       "  padding-bottom: 6px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  overflow-x: hidden;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_column_spanner_outer {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: normal;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 0;\n",
-       "  padding-bottom: 0;\n",
-       "  padding-left: 4px;\n",
-       "  padding-right: 4px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_column_spanner_outer:first-child {\n",
-       "  padding-left: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_column_spanner_outer:last-child {\n",
-       "  padding-right: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_column_spanner {\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  vertical-align: bottom;\n",
-       "  padding-top: 5px;\n",
-       "  padding-bottom: 5px;\n",
-       "  overflow-x: hidden;\n",
-       "  display: inline-block;\n",
-       "  width: 100%;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_spanner_row {\n",
-       "  border-bottom-style: hidden;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_group_heading {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "  text-align: left;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_empty_group_heading {\n",
-       "  padding: 0.5px;\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_from_md > :first-child {\n",
-       "  margin-top: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_from_md > :last-child {\n",
-       "  margin-bottom: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  margin: 10px;\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 1px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 1px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 1px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  vertical-align: middle;\n",
-       "  overflow-x: hidden;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_stub {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-right-style: solid;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_stub_row_group {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  font-size: 100%;\n",
-       "  font-weight: initial;\n",
-       "  text-transform: inherit;\n",
-       "  border-right-style: solid;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  vertical-align: top;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_row_group_first td {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_row_group_first th {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_summary_row {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_first_summary_row {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_first_summary_row.thick {\n",
-       "  border-top-width: 2px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_last_summary_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_grand_summary_row {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  text-transform: inherit;\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_first_grand_summary_row {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-top-style: double;\n",
-       "  border-top-width: 6px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_last_grand_summary_row_top {\n",
-       "  padding-top: 8px;\n",
-       "  padding-bottom: 8px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "  border-bottom-style: double;\n",
-       "  border-bottom-width: 6px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_striped {\n",
-       "  background-color: rgba(128, 128, 128, 0.05);\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_table_body {\n",
-       "  border-top-style: solid;\n",
-       "  border-top-width: 2px;\n",
-       "  border-top-color: #D3D3D3;\n",
-       "  border-bottom-style: solid;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_footnotes {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  border-bottom-style: none;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_footnote {\n",
-       "  margin: 0px;\n",
-       "  font-size: 90%;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_sourcenotes {\n",
-       "  color: #333333;\n",
-       "  background-color: #FFFFFF;\n",
-       "  border-bottom-style: none;\n",
-       "  border-bottom-width: 2px;\n",
-       "  border-bottom-color: #D3D3D3;\n",
-       "  border-left-style: none;\n",
-       "  border-left-width: 2px;\n",
-       "  border-left-color: #D3D3D3;\n",
-       "  border-right-style: none;\n",
-       "  border-right-width: 2px;\n",
-       "  border-right-color: #D3D3D3;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_sourcenote {\n",
-       "  font-size: 90%;\n",
-       "  padding-top: 4px;\n",
-       "  padding-bottom: 4px;\n",
-       "  padding-left: 5px;\n",
-       "  padding-right: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_left {\n",
-       "  text-align: left;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_center {\n",
-       "  text-align: center;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_right {\n",
-       "  text-align: right;\n",
-       "  font-variant-numeric: tabular-nums;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_font_normal {\n",
-       "  font-weight: normal;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_font_bold {\n",
-       "  font-weight: bold;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_font_italic {\n",
-       "  font-style: italic;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_super {\n",
-       "  font-size: 65%;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_footnote_marks {\n",
-       "  font-size: 75%;\n",
-       "  vertical-align: 0.4em;\n",
-       "  position: initial;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_asterisk {\n",
-       "  font-size: 100%;\n",
-       "  vertical-align: 0;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_indent_1 {\n",
-       "  text-indent: 5px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_indent_2 {\n",
-       "  text-indent: 10px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_indent_3 {\n",
-       "  text-indent: 15px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_indent_4 {\n",
-       "  text-indent: 20px;\n",
-       "}\n",
-       "\n",
-       "#hxpdwjxwnm .gt_indent_5 {\n",
-       "  text-indent: 25px;\n",
-       "}\n",
-       "</style>\n",
-       "  <table class=\"gt_table\" data-quarto-disable-processing=\"false\" data-quarto-bootstrap=\"false\">\n",
-       "  <thead>\n",
-       "    <tr class=\"gt_col_headings\">\n",
-       "      <th class=\"gt_col_heading gt_columns_bottom_border gt_left\" rowspan=\"1\" colspan=\"1\" scope=\"col\" id=\"variable\">variable</th>\n",
-       "      <th class=\"gt_col_heading gt_columns_bottom_border gt_right\" rowspan=\"1\" colspan=\"1\" scope=\"col\" id=\"importance\">importance</th>\n",
-       "    </tr>\n",
-       "  </thead>\n",
-       "  <tbody class=\"gt_table_body\">\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">RB historical percent right</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0601</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">sequential offensive player gap left</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0588</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">RB historical percent left</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0566</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">RB orientation</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0536</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">sequential offensive player gap right</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0518</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">RB historical percent middle</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0474</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">orientation gap right</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0474</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">orientation gap left</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0470</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">sequential offensive player gap middle</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0454</td></tr>\n",
-       "    <tr><td headers=\"variable\" class=\"gt_row gt_left\">absolute yardline</td>\n",
-       "<td headers=\"importance\" class=\"gt_row gt_right\">0.0442</td></tr>\n",
-       "  </tbody>\n",
-       "  \n",
-       "  \n",
-       "</table>\n",
-       "</div>"
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"tbl-vi\"\n",
-    "#| tbl-cap: \"Top 10 significant variables from the boosted tree model.\"\n",
-    "\n",
-    "vi_table |> \n",
-    "  select(variable = var_names, importance) |> \n",
-    "  gt() |> \n",
-    "  fmt_number(columns = \"importance\",\n",
-    "             decimals = 4)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "1b1d5ead",
-   "metadata": {
-    "papermill": {
-     "duration": 0.006613,
-     "end_time": "2024-12-19T19:57:02.252552",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.245939",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "@fig-rb-boxplot explores the relationship between the percentage of time the RB on the play rushed left, right, and middle in all prior games and the rush direction of the current play. From the \"RB historical left\" plot, we observe that plays with a left rush direction tend to feature RBs with a higher median percentage of historically rushing left.\n",
-    "Similar trends are evident in the \"RB historical right\" and \"RB historical middle\" plots, where RBs with higher historical percentages in those directions are more likely to rush in the corresponding direction during the current play.\n",
-    "\n",
-    "This pattern aligns with intuition: in a football game, power rushers often run up the middle, while shifty rushers use their speed to exploit gaps on the outside. However, it is important to note that early-season games had little to no historical data due to being the first games of the season. Incorporating data from the prior season could potentially improve prediction accuracy.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 8,
-   "id": "6e7eb1c0",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:02.269886Z",
-     "iopub.status.busy": "2024-12-19T19:57:02.268220Z",
-     "iopub.status.idle": "2024-12-19T19:57:02.286724Z",
-     "shell.execute_reply": "2024-12-19T19:57:02.285057Z"
-    },
-    "papermill": {
-     "duration": 0.03002,
-     "end_time": "2024-12-19T19:57:02.289069",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.259049",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "[1] \"../input/results/04_rb_boxplot.png\"\n",
-       "attr(,\"class\")\n",
-       "[1] \"knit_image_paths\" \"knit_asis\"       "
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-rb-boxplot\"\n",
-    "#| fig-cap: \"The boxplots show that a larger median gap size corresponds to the rush direction of the play.\"\n",
-    "#| out.width: \"100%\"\n",
-    "\n",
-    "knitr::include_graphics(\"../input/results/04_rb_boxplot.png\")\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "10fcb1a7",
-   "metadata": {
-    "papermill": {
-     "duration": 0.006833,
-     "end_time": "2024-12-19T19:57:02.302905",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.296072",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "Next we examine the relationship between the normalized size of sequential offensive player gaps and rush direction, as shown in @fig-gap-boxplot. The \"left gap size\" plot illustrates the distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left tend to have a larger median gap size compared to plays with middle or right rush directions. Similarly, larger middle gap sizes are associated with rushes through the middle, while larger right gap sizes correspond to rushes to the right. These patterns indicate a weak but observable relationship between spatial gap size and rush direction.\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 9,
-   "id": "4a304abf",
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2024-12-19T19:57:02.320124Z",
-     "iopub.status.busy": "2024-12-19T19:57:02.318516Z",
-     "iopub.status.idle": "2024-12-19T19:57:02.337903Z",
-     "shell.execute_reply": "2024-12-19T19:57:02.336087Z"
-    },
-    "papermill": {
-     "duration": 0.030576,
-     "end_time": "2024-12-19T19:57:02.340237",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.309661",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "data": {
-      "text/plain": [
-       "[1] \"../input/results/05_gap_boxplot.png\"\n",
-       "attr(,\"class\")\n",
-       "[1] \"knit_image_paths\" \"knit_asis\"       "
-      ]
-     },
-     "metadata": {},
-     "output_type": "display_data"
-    }
-   ],
-   "source": [
-    "#| label: \"fig-gap-boxplot\"\n",
-    "#| fig-cap: \"The boxplots show that a larger median gap size corresponds to the rush direction of the play.\"\n",
-    "#| out.width: \"100%\"\n",
-    "\n",
-    "knitr::include_graphics(\"../input/results/05_gap_boxplot.png\")\n"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "0f978dad",
-   "metadata": {
-    "papermill": {
-     "duration": 0.00685,
-     "end_time": "2024-12-19T19:57:02.354213",
-     "exception": false,
-     "start_time": "2024-12-19T19:57:02.347363",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "source": [
-    "## Discussion\n",
-    "\n",
-    "We utilized a boosted tree model to predict whether the rusher on a play runs to the left, right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables improved prediction accuracy over the baseline model by `r accuracy_main*100 - accuracy_base*100`%. We identified a very weak relationship between gap sizes and rush direction, we also found that a running back's (RB's) historical tendencies have a small, yet measurable, influence on the rush location.\n",
-    "\n",
-    "Establishing a strong run game is critical for an offense as it helps open up the passing game, wear down the defense, and control the clock. Conversely, limiting an opponent's run game makes defensive play calling and execution easier. Although the overall model accuracy of `r accuracy_main*100`% is modest, the findings suggest that defenses should prepare for rushes in any direction and that post-snap developments may provide more actionable insights into rush direction.\n",
-    "\n",
-    "Future research could focus on using functional data to evaluate an RB's effectiveness in rushing middle versus outside routes or on quantifying an offensive line's impact through post-snap spatial gap sizes and their contributions to successful rushing plays.\n",
-    "\n",
-    "\n",
-    "## References\n",
-    "\n",
-    "Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). 'nflverse'. [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).\n",
-    "\n",
-    "Joash Fernandes C, et al., (2020), ‘Predicting Plays in the National Football League’. Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.\n",
-    "\n",
-    "Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), 'NFL Big Data Bowl 2025'. [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.\n",
-    "\n",
-    "\n",
-    "## Appendix\n",
-    "\n",
-    "All code is available at [https://github.com/dsass1/nfl_bowl_2025](https://github.com/dsass1/nfl_bowl_2025).\n",
-    "\n",
-    "### Boosted tree specifications\n",
-    "\n",
-    "The boosted tree models were run using the \"xgboost\" engine. The following parameters were tuned to find the optimal model fit:\n",
-    "\n",
-    "  - number of trees (500 to 2000 over a regular grid of 4)\n",
-    "  - minimum number of nodes (2 to 40 over a regular grid of 5)\n",
-    "  - number of variables to try (5 to 25 over a regular grid of 5)\n",
-    "  - learn rate (-5 to -0.1 on a log10 scale over a regular grid of 10)\n",
-    "  \n",
-    "The optimal parameters for the model results were 2,000 trees, 6 nodes minimum, 15 variables to try, and a learn rate of 0.00282. And the optimal parameters for the baseline model results were 1,500 trees, 23 nodes minimum, 15 variables to try, and a learn rate of 0.00282."
-   ]
-  }
- ],
- "metadata": {
-  "kaggle": {
-   "accelerator": "none",
-   "dataSources": [
-    {
-     "databundleVersionId": 9816926,
-     "sourceId": 84175,
-     "sourceType": "competition"
-    },
-    {
-     "datasetId": 6339183,
-     "sourceId": 10249100,
-     "sourceType": "datasetVersion"
-    }
-   ],
-   "dockerImageVersionId": 30749,
-   "isGpuEnabled": false,
-   "isInternetEnabled": true,
-   "language": "r",
-   "sourceType": "notebook"
-  },
-  "kernelspec": {
-   "display_name": "R",
-   "language": "R",
-   "name": "ir"
-  },
-  "language_info": {
-   "codemirror_mode": "r",
-   "file_extension": ".r",
-   "mimetype": "text/x-r-source",
-   "name": "R",
-   "pygments_lexer": "r",
-   "version": "4.4.0"
-  },
-  "papermill": {
-   "default_parameters": {},
-   "duration": 8.882676,
-   "end_time": "2024-12-19T19:57:02.481901",
-   "environment_variables": {},
-   "exception": null,
-   "input_path": "__notebook__.ipynb",
-   "output_path": "__notebook__.ipynb",
-   "parameters": {},
-   "start_time": "2024-12-19T19:56:53.599225",
-   "version": "2.6.0"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+---
+title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
+author: "Danielle Sass"
+
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    embed-resources: true
+    number-sections: false
+    link-external-newwindow: true
+
+execute:
+  message: false
+  warning: false
+  echo: false
+  
+from: markdown+emoji
+reference-location: margin
+citation-location: margin
+---
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(gt)
+library(gtExtras)
+library(yardstick)
+library(here)
+
+predictions <- read_rds("../input/results/predictions.rds")
+run_gap_table <- read_csv("../input/results/run_gap_table.csv")
+vi_table <- read_rds("../input/results/vi_table.rds")
+
+accuracy_main <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_main) |> pull(.estimate) |> round(3)
+
+accuracy_base <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_base) |> pull(.estimate) |> round(3)
+
+accuracy_naive <- accuracy(predictions, 
+                          truth = rush_loc_calc,
+                          estimate =.pred_class_naive) |> pull(.estimate) |> round(3)
+
+```
+
+## Introduction
+
+In football, an offensive play typically involves either a pass or a rush. For a defensive team, 
+accurately predicting the type of play offers a significant strategic advantage. For instance, 
+anticipating a rush allows the defense to position more players in the box, while expecting a pass 
+might prompt defenders to drop back into coverage. Prior research has demonstrated that 
+distinguishing between pass and rush plays can be achieved with 75-80% accuracy using a limited 
+set of variables (Joash Fernandez et al., 2020). Building on this foundation, our study focuses 
+on enhancing the defensive advantage by predicting the direction of a rush; categorized as left, 
+middle, or right. More importantly, we aim to incorporate novel spatial tracking variables and 
+identify those that serve as key indicators of rush direction, providing deeper insights into 
+offensive tendencies. 
+
+## Data preparation
+
+To predict rush direction, we use tracking, play-by-play, player, and game data from the 2022 NFL 
+season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data 
+from the `nflverse` package (Carl et al., 2023). Our analysis focuses exclusively on rush plays, 
+totaling 6,183 observations. Scramble plays, while typically categorized as rushes, were excluded 
+since they originate as pass plays and involve decisions made after the snap. This aligns with our 
+emphasis on leveraging pre-snap information.
+
+### Rush direction
+
+Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the 
+provided rush location types. Given the lack of detailed documentation on how rush direction was 
+determined and to enhance prediction accuracy, we recalculated rush direction manually using the 
+tracking data.
+
+At its simplest, rush direction is categorized as left, right, or middle, based on the ball 
+carrier`s 
+path relative to the offensive linemen. Specifically, a rush is classified as:
+
+- `left`: if the ball carrier advances past the leftmost offensive lineman on the left,
+- `right`: if they advance past the rightmost offensive lineman on the right,
+- `middle`: if they advance between these two outside linemen.
+
+@fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
+
+```{r}
+#| label: "fig-run"
+#| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
+
+knitr::include_graphics("../input/results/01_run_definition.gif")
+```
+
+In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
+does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line 
+set to determine whether the rusher moved to the left, right, or middle relative to the linemen.
+
+### Spatial tracking variables
+
+Pre-snap data was used to build a predictive model. When rushing, a player looks for a gap or 
+hole created by their teammates to run through. We aim to investigate whether pre-snap player 
+orientation and positioning offers insights into potential gap formation, which could signal the 
+rusher`s intended direction.
+
+#### Sequential offensive player gap 
+
+Assuming the offensive and defensive players near the line of scrimmage are positioned one yard 
+away from it, we project all players positions one yard forward in the direction of their 
+orientation. This adjustment aligns all players along the line of scrimmage. 
+
+A gap is defined as an open space between two offensive players positioned consecutively, or 
+between an offensive player and the sideline. Gaps are categorized as left, right, or middle 
+based on their position relative to the outermost offensive linemen. The size of a gap is 
+calculated as the distance between the two offensive players forming it. 
+
+@fig-run-gap2 demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
+When multiple gaps exist within a region, the largest gap is selected. The sequential offensive 
+player gap values for this play are as follows:
+ 
+  - `left`: 0
+  - `right`: 21.34
+  - `middle`: 1.87
+
+```{r}
+#| label: "fig-run-gap2"
+#| fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
+#| out.width: "100%"
+
+knitr::include_graphics("../input/results/03_run_gap_manual.png")
+
+```
+
+#### Orientation gap
+
+Now considering only the offensive players near the line of scrimmage, a gap is defined as an open 
+space between two offensive players oriented away from each other, or if their is no neighboring 
+offensive player if the player is oriented away from the sideline. If players are oriented in 
+opposite directions the intuition is that they are trying to push the defense in opposite directions. 
+Again, gaps are categorized as left, right, or middle based on their position relative to the 
+outermost offensive linemen and the size of the gap is the distance between the two offensive 
+players forming it. @fig-run-gap shows a left gap between the sideline and player 1; a middle gap 
+between players 4 and 5; and a right gap between player 9 and the sideline. 
+
+```{r}
+#| out.width: "100%"
+
+knitr::include_graphics("../input/results/02_run_gap_manual.png")
+
+```
+
+```{r}
+#| label: "fig-run-gap"
+#| fig-cap: "Orientation gaps for the play are highlighted in yellow, either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right."
+
+rownames(run_gap_table) <- c("player", "orientation")
+
+run_gap_table |>
+  gt(rownames_to_stub = T) |>
+  fmt_number(rows = "player",
+             decimals = 0) |>
+  fmt_number(rows = "orientation",
+             decimals = 2) |>
+  tab_style(
+    style = list(
+      cell_fill(color = "#F0E442", alpha = 0.5),
+      cell_text(weight = "bold")
+      ),
+    locations = cells_body(
+      columns = c(2, 5, 6, 10)
+    )
+  ) |>
+  tab_options(
+    column_labels.hidden = TRUE
+  )
+
+```
+
+#### Quarterback and running back variables
+
+Additional spatial variables include the running back's (RB) and quarter back's (QB) orientation, 
+the distance between the RB and QB, whether the RB is positioned to the left or right of the QB, 
+and whether the RB was in motion or shifted pre-snap. 
+
+We also incorporate the RB`s historical tendencies. For all games prior to the current week, 
+we calculate the percentage of runs directed left, right, or middle by the RB. If multiple 
+RBs participated in the play, we use the average of their tendencies. Similarly, we consider 
+game-specific tendencies by calculating the percentage of runs to the left, right, and middle 
+for all plays in the current game leading up to the play being analyzed.
+
+
+### Other predictor variables {#sec-other-var}
+
+In addition to the spatial variables we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.
+
+## Model
+
+We employed a boosted tree model to predict a play`s rush direction, using v-fold cross-validation 
+with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set 
+(weeks 7 – 9). To address the severe class imbalance in rush direction 
+(`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced 
+dataset and mitigate overfitting.
+
+All variables discussed in [Spatial tracking variables] and [Other predictor variables] were 
+included in the model. See the [Appendix] for details on tuning specifications and optimal 
+parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, 
+as shown by the 830 plays predicted correct out of 1,955 plays in @fig-conf-mat.
+
+```{r}
+#| label: "fig-conf-mat"
+#| fig-cap: "Confusion matrix of prediction results."
+# Visualize confusion matrix
+predictions |> 
+  conf_mat(rush_loc_calc, .pred_class_main) |> 
+  autoplot(type = "heatmap")
+```
+
+
+The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a 
+naive strategy of always predicting "middle" could yield higher accuracy (`r accuracy_naive*100`%)
+due to the class imbalance, such an approach would provide no insights into variable importance. 
+The accuracy of `r accuracy_main*100`% is certainly better than that naive approach on a balanced 
+dataset (33.3%).
+
+To evaluate whether the novel spatial tracking variables contribute meaningful insights into 
+rush direction, we compared our model`s performance to a baseline model. The baseline model, 
+also a tuned boosted tree, was built using only the variables described in 
+[Other predictor variables]. Its accuracy on the testing set was `r accuracy_base*100`%.
+
+## Insights
+
+Including spatial tracking variables improves prediction accuracy by 
+`r accuracy_main*100 - accuracy_base*100`%. To better understand the impact of these variables, 
+we examine their importance as determined by the boosted tree model.
+
+```{r}
+#| label: "tbl-vi"
+#| tbl-cap: "Top 10 significant variables from the boosted tree model."
+
+vi_table |> 
+  select(variable = var_names, importance) |> 
+  gt() |> 
+  fmt_number(columns = "importance",
+             decimals = 4)
+```
+
+@fig-rb-boxplot explores the relationship between the percentage of time the RB on the play 
+rushed left, right, and middle in all prior games and the rush direction of the current play. 
+From the "RB historical left" plot, we observe that plays with a left rush direction tend to 
+feature RBs with a higher median percentage of historically rushing left.
+Similar trends are evident in the "RB historical right" and "RB historical middle" plots, 
+where RBs with higher historical percentages in those directions are more likely to rush in the 
+corresponding direction during the current play.
+
+This pattern aligns with intuition: in a football game, power rushers often run up the middle, 
+while shifty rushers use their speed to exploit gaps on the outside. However, it is important 
+to note that early-season games had little to no historical data due to being the first games 
+of the season. Incorporating data from the prior season could potentially improve prediction 
+accuracy.
+
+```{r}
+#| label: "fig-rb-boxplot"
+#| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
+#| out.width: "100%"
+
+knitr::include_graphics("../input/results/04_rb_boxplot.png")
+
+```
+
+Next we examine the relationship between the normalized size of sequential offensive player gaps 
+and rush direction, as shown in @fig-gap-boxplot. The "left gap size" plot illustrates the 
+distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left 
+tend to have a larger median gap size compared to plays with middle or right rush directions. 
+Similarly, larger middle gap sizes are associated with rushes through the middle, while larger 
+right gap sizes correspond to rushes to the right. These patterns indicate a weak but observable 
+relationship between spatial gap size and rush direction.
+
+```{r}
+#| label: "fig-gap-boxplot"
+#| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
+#| out.width: "100%"
+
+knitr::include_graphics("../input/results/05_gap_boxplot.png")
+
+```
+
+## Discussion
+
+We utilized a boosted tree model to predict whether the rusher on a play runs to the left, 
+right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables 
+improved prediction accuracy over the baseline model by `r accuracy_main*100 - accuracy_base*100`%. 
+We identified a very weak relationship between gap sizes and rush direction, we also found that a 
+running back's (RB's) historical tendencies have a small, yet measurable, influence on the rush 
+location.
+
+Establishing a strong run game is critical for an offense as it helps open up the passing game, 
+wear down the defense, and control the clock. Conversely, limiting an opponent`s run game makes 
+defensive play calling and execution easier. Although the overall model accuracy of 
+`r accuracy_main*100`% is modest, the findings suggest that defenses should prepare for rushes 
+in any direction and that post-snap developments may provide more actionable insights into rush 
+direction.
+
+Future research could focus on using functional data to evaluate an RB`s effectiveness in rushing 
+middle versus outside routes or on quantifying an offensive line`s impact through post-snap 
+spatial gap sizes and their contributions to successful rushing plays.
+
+
+## References
+
+Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). 'nflverse'. [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
+
+Joash Fernandes C, et al., (2020), ‘Predicting Plays in the National Football League’. Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
+
+Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), 'NFL Big Data Bowl 2025'. [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
+
+
+
+## Appendix
+
+All code is available at [https://github.com/dsass1/nfl_bowl_2025](https://github.com/dsass1/nfl_bowl_2025).
+
+### Boosted tree specifications
+
+The boosted tree models were run using the "xgboost" engine. The following parameters were tuned to 
+find the optimal model fit:
+
+  - number of trees (500 to 2000 over a regular grid of 4)
+  - minimum number of nodes (2 to 40 over a regular grid of 5)
+  - number of variables to try (5 to 25 over a regular grid of 5)
+  - learn rate (-5 to -0.1 on a log10 scale over a regular grid of 10)
+  
+The optimal parameters for the model results were 2,000 trees, 6 nodes minimum, 15 variables to try, 
+and a learn rate of 0.00282. And the optimal parameters for the baseline model results were 1,500 
+trees, 23 nodes minimum, 15 variables to try, and a learn rate of 0.00282.
