@@ -124,11 +124,8 @@ player gap values for this play are as follows:
 # fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
 # out.width: "100%"
 
-knitr::include_graphics("../input/results/03_run_gap_manual.png")
-
+knitr::include_graphics("/kaggle/input/results/03_run_gap_manual.png")
 ```
-
-!["Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."](../input/results/03_run_gap_manual.png)
 
 #### Orientation gap
 
