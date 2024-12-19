@@ -52,3 +52,5 @@ rsconnect/
 data/raw/player_play.csv
 data/raw/tracking_week_*.csv
 data/tracking_runs.rds
+Rplots.pdf
+RPlots.pdf
