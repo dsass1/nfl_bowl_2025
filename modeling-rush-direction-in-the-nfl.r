@@ -83,6 +83,10 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 knitr::include_graphics("../input/results/01_run_definition.gif")
 ```
 
+<center>
+<img src = "../input/results/01_run_definition.gif" style ="width:100%">
+</center>
+
 In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
 does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line 
 set to determine whether the rusher moved to the left, right, or middle relative to the linemen.
