@@ -70,14 +70,14 @@ carrier`s
 path relative to the offensive linemen. Specifically, a rush is classified as:
 
 <ul>
-  <li>`left`: if the ball carrier advances past the leftmost offensive lineman on the left,</li>
-  <li>`right`: if they advance past the rightmost offensive lineman on the right,</li>
-  <li>`middle`: if they advance between these two outside linemen.</li>
+  <li>- `left`: if the ball carrier advances past the leftmost offensive lineman on the left,</li>
+  <li>- `right`: if they advance past the rightmost offensive lineman on the right,</li>
+  <li>- `middle`: if they advance between these two outside linemen.</li>
 </ul>
 
-- `left`: if the ball carrier advances past the leftmost offensive lineman on the left,
-- `right`: if they advance past the rightmost offensive lineman on the right,
-- `middle`: if they advance between these two outside linemen.
+* `left`: if the ball carrier advances past the leftmost offensive lineman on the left,
+* `right`: if they advance past the rightmost offensive lineman on the right,
+* `middle`: if they advance between these two outside linemen.
 
 \@ref(fig:fig-run) illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
 
