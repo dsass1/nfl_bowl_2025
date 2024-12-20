@@ -2,10 +2,9 @@
 title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
 author: "Danielle Sass"
 output:
-  html_document:
-    self-contained: TRUE
+  bookdown::html_document2:
+    self_contained: true
     number-sections: false
-    link-external-newwindow: true
 ---
 
 ```{r}
@@ -37,7 +36,7 @@ accuracy_naive <- accuracy(predictions,
 
 ```
 
-## Introduction
+# Introduction
 
 In football, an offensive play typically involves either a pass or a rush. For a defensive team, 
 accurately predicting the type of play offers a significant strategic advantage. For instance, 
@@ -50,7 +49,7 @@ middle, or right. More importantly, we aim to incorporate novel spatial tracking
 identify those that serve as key indicators of rush direction, providing deeper insights into 
 offensive tendencies. 
 
-## Data preparation
+# Data preparation
 
 To predict rush direction, we use tracking, play-by-play, player, and game data from the 2022 NFL 
 season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data 
@@ -59,7 +58,7 @@ totaling 6,183 observations. Scramble plays, while typically categorized as rush
 since they originate as pass plays and involve decisions made after the snap. This aligns with our 
 emphasis on leveraging pre-snap information.
 
-### Rush direction
+## Rush direction
 
 Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the 
 provided rush location types. Given the lack of detailed documentation on how rush direction was 
@@ -74,33 +73,30 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 - `right`: if they advance past the rightmost offensive lineman on the right,
 - `middle`: if they advance between these two outside linemen.
 
-@fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
+\@ref(fig:fig-run) illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
 
 ```{r}
 #| label: "fig-run"
 #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
+#| out.width: 90%
 
-#knitr::include_graphics("../input/results/01_run_definition.gif")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true")
 
-magick::image_read("../input/results/01_run_definition.gif")
 ```
 
-<center>
-<img src = "../input/results/01_run_definition.gif" style ="width:100%">
-</center>
 
 In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
 does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line 
 set to determine whether the rusher moved to the left, right, or middle relative to the linemen.
 
-### Spatial tracking variables
+## Spatial tracking variables
 
 Pre-snap data was used to build a predictive model. When rushing, a player looks for a gap or 
 hole created by their teammates to run through. We aim to investigate whether pre-snap player 
 orientation and positioning offers insights into potential gap formation, which could signal the 
 rusher`s intended direction.
 
-#### Sequential offensive player gap 
+### Sequential offensive player gap 
 
 Assuming the offensive and defensive players near the line of scrimmage are positioned one yard 
 away from it, we project all players positions one yard forward in the direction of their 
@@ -111,7 +107,7 @@ between an offensive player and the sideline. Gaps are categorized as left, righ
 based on their position relative to the outermost offensive linemen. The size of a gap is 
 calculated as the distance between the two offensive players forming it. 
 
-\@ref{fig:fig-run-gap2} demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
+\@ref(fig:fig-run-gap2) demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
 When multiple gaps exist within a region, the largest gap is selected. The sequential offensive 
 player gap values for this play are as follows:
  
@@ -119,15 +115,15 @@ player gap values for this play are as follows:
   - `right`: 21.34
   - `middle`: 1.87
 
-```{r fig-run-gap2, echo = FALSE, fig.cap= "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."}
-# label: "fig-run-gap2"
-# fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
-# out.width: "100%"
+```{r}
+#| label: "fig-run-gap2"
+#| fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
+#| out.width: "100%"
 
-knitr::include_graphics("/kaggle/input/results/03_run_gap_manual.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/03_run_gap_manual.png?raw=true")
 ```
 
-#### Orientation gap
+### Orientation gap
 
 Now considering only the offensive players near the line of scrimmage, a gap is defined as an open 
 space between two offensive players oriented away from each other, or if their is no neighboring 
@@ -135,13 +131,13 @@ offensive player if the player is oriented away from the sideline. If players ar
 opposite directions the intuition is that they are trying to push the defense in opposite directions. 
 Again, gaps are categorized as left, right, or middle based on their position relative to the 
 outermost offensive linemen and the size of the gap is the distance between the two offensive 
-players forming it. @fig-run-gap shows a left gap between the sideline and player 1; a middle gap 
+players forming it. \@ref(fig:fig-run-gap) shows a left gap between the sideline and player 1; a middle gap 
 between players 4 and 5; and a right gap between player 9 and the sideline. 
 
 ```{r}
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/02_run_gap_manual.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/02_run_gap_manual.png?raw=true")
 
 ```
 
@@ -172,7 +168,7 @@ run_gap_table |>
 
 ```
 
-#### Quarterback and running back variables
+### Quarterback and running back variables
 
 Additional spatial variables include the running back`s (RB) 
 and quarter back`s (QB) orientation, 
@@ -186,13 +182,13 @@ game-specific tendencies by calculating the percentage of runs to the left, righ
 for all plays in the current game leading up to the play being analyzed.
 
 
-### Other predictor variables {#sec-other-var}
+## Other predictor variables
 
 In addition to the spatial variables we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.
 
-## Model
+# Model
 
-We employed a boosted tree model to predict a play`s rush direction, using v-fold cross-validation 
+We employed a boosted tree model to predict a play\'s rush direction, using v-fold cross-validation 
 with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set 
 (weeks 7 – 9). To address the severe class imbalance in rush direction 
 (`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced 
@@ -201,7 +197,7 @@ dataset and mitigate overfitting.
 All variables discussed in [Spatial tracking variables] and [Other predictor variables] were 
 included in the model. See the [Appendix] for details on tuning specifications and optimal 
 parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, 
-as shown by the 830 plays predicted correct out of 1,955 plays in @fig-conf-mat.
+as shown by the 830 plays predicted correct out of 1,955 plays in \@ref(fig:fig-conf-mat).
 
 ```{r}
 #| label: "fig-conf-mat"
@@ -224,7 +220,7 @@ rush direction, we compared our model`s performance to a baseline model. The bas
 also a tuned boosted tree, was built using only the variables described in 
 [Other predictor variables]. Its accuracy on the testing set was `r accuracy_base*100`%.
 
-## Insights
+# Insights
 
 Including spatial tracking variables improves prediction accuracy by 
 `r accuracy_main*100 - accuracy_base*100`%. To better understand the impact of these variables, 
@@ -241,7 +237,7 @@ vi_table |>
              decimals = 4)
 ```
 
-@fig-rb-boxplot explores the relationship between the percentage of time the RB on the play 
+\@ref(fig:fig-rb-boxplot) explores the relationship between the percentage of time the RB on the play 
 rushed left, right, and middle in all prior games and the rush direction of the current play. 
 From the "RB historical left" plot, we observe that plays with a left rush direction tend to 
 feature RBs with a higher median percentage of historically rushing left.
@@ -260,12 +256,12 @@ accuracy.
 #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/04_rb_boxplot.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/04_rb_boxplot.png?raw=true")
 
 ```
 
 Next we examine the relationship between the normalized size of sequential offensive player gaps 
-and rush direction, as shown in @fig-gap-boxplot. The "left gap size" plot illustrates the 
+and rush direction, as shown in \@ref(fig:fig-gap-boxplot). The "left gap size" plot illustrates the 
 distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left 
 tend to have a larger median gap size compared to plays with middle or right rush directions. 
 Similarly, larger middle gap sizes are associated with rushes through the middle, while larger 
@@ -277,11 +273,11 @@ relationship between spatial gap size and rush direction.
 #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/05_gap_boxplot.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/05_gap_boxplot.png?raw=true")
 
 ```
 
-## Discussion
+# Discussion
 
 We utilized a boosted tree model to predict whether the rusher on a play runs to the left, 
 right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables 
@@ -303,21 +299,21 @@ middle versus outside routes or on quantifying an offensive line`s impact throug
 spatial gap sizes and their contributions to successful rushing plays.
 
 
-## References
+# References
 
-Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). 'nflverse'. [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
+Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). "nflverse". [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
 
-Joash Fernandes C, et al., (2020), ‘Predicting Plays in the National Football League’. Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
+Joash Fernandes C, et al., (2020), "Predicting Plays in the National Football League". Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
 
-Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), 'NFL Big Data Bowl 2025'. [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
+Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), "NFL Big Data Bowl 2025". [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
 
 
 
-## Appendix
+# Appendix
 
 All code is available at [https://github.com/dsass1/nfl_bowl_2025](https://github.com/dsass1/nfl_bowl_2025).
 
-### Boosted tree specifications
+## Boosted tree specifications
 
 The boosted tree models were run using the "xgboost" engine. The following parameters were tuned to 
 find the optimal model fit:
