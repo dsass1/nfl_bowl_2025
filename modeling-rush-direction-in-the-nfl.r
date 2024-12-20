@@ -80,13 +80,12 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 #| label: "fig-run"
 #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
 
-#knitr::include_graphics("../input/results/01_run_definition.gif")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true")
 
-#magick::image_read("../input/results/01_run_definition.gif")
 ```
 
 <center>
-<img src = "../images/01_run_definition.gif" style ="width:100%">
+<img src = "https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true" style ="width:100%">
 </center>
 
 In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
