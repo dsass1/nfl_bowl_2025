@@ -1,4 +1,3 @@
-# %% [code]
 ---
 title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
 author: "[Danielle Sass](https://www.linkedin.com/in/danielle-sass-63a4915b/)"
