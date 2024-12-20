@@ -80,7 +80,9 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 #| label: "fig-run"
 #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
 
-knitr::include_graphics("../input/results/01_run_definition.gif")
+#knitr::include_graphics("../input/results/01_run_definition.gif")
+
+magick::image_read("../input/results/01_run_definition.gif")
 ```
 
 <center>
