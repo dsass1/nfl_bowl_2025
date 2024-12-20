@@ -3,7 +3,7 @@ title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
 author: "Danielle Sass"
 output:
   html_document:
-    self-contained: true
+    self-contained: TRUE
     number-sections: false
     link-external-newwindow: true
 ---
