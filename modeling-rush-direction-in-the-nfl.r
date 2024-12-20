@@ -72,7 +72,7 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 - `right`: if they advance past the rightmost offensive lineman on the right,
 - `middle`: if they advance between these two outside linemen.
 
-@fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
+\@ref(fig:fig-run) illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
 
 ```{r}
 #| label: "fig-run"
@@ -83,9 +83,6 @@ knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/image
 
 ```
 
-<center>
-<img src = "https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true" style ="width:100%">
-</center>
 
 In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
 does not cross the line of scrimmage, we use the coordinates of the outside linemen at the line 
