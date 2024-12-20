@@ -4,7 +4,7 @@ author: "Danielle Sass"
 output:
   bookdown::html_document2:
     self_contained: true
-    number-sections: false
+    number_sections: false
 ---
 
 ```{r}
@@ -135,15 +135,13 @@ players forming it. \@ref(fig:fig-run-gap) shows a left gap between the sideline
 between players 4 and 5; and a right gap between player 9 and the sideline. 
 
 ```{r}
-#| out.width: "100%"
+#| label: "fig-run-gap"
+#| fig-cap: "Orientation gaps for the play are highlighted in yellow, either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right."
+#| fig.show: "hold"
+
 
 knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/02_run_gap_manual.png?raw=true")
 
-```
-
-```{r}
-#| label: "fig-run-gap"
-#| fig-cap: "Orientation gaps for the play are highlighted in yellow, either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right."
 
 rownames(run_gap_table) <- c("player", "orientation")
 
@@ -153,6 +151,10 @@ run_gap_table |>
              decimals = 0) |>
   fmt_number(rows = "orientation",
              decimals = 2) |>
+  tab_header(
+    title = "Gaps defined by offensive player orientation at line set",
+    subtitle = "Players oriented away from each other form a gap"
+  ) |> 
   tab_style(
     style = list(
       cell_fill(color = "#F0E442", alpha = 0.5),
@@ -163,7 +165,10 @@ run_gap_table |>
     )
   ) |>
   tab_options(
-    column_labels.hidden = TRUE
+    column_labels.hidden = TRUE,
+    heading.title.font.size = 12,
+    heading.title.font.weight = "bold",
+    heading.subtitle.font.size = 11
   )
 
 ```
