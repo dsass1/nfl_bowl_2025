@@ -4,6 +4,7 @@ author: "Danielle Sass"
 output:
   bookdown::html_document2:
     self_contained: true
+    number-sections: false
 ---
 
 ```{r}
@@ -77,7 +78,7 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 ```{r}
 #| label: "fig-run"
 #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
-#| out.width: 100%
+#| out.width: 90%
 
 knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true")
 
@@ -106,7 +107,7 @@ between an offensive player and the sideline. Gaps are categorized as left, righ
 based on their position relative to the outermost offensive linemen. The size of a gap is 
 calculated as the distance between the two offensive players forming it. 
 
-\@ref{fig:fig-run-gap2} demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
+\@ref(fig:fig-run-gap2) demonstrates a play with no left gaps, two middle gaps, and two right gaps. 
 When multiple gaps exist within a region, the largest gap is selected. The sequential offensive 
 player gap values for this play are as follows:
  
@@ -114,10 +115,10 @@ player gap values for this play are as follows:
   - `right`: 21.34
   - `middle`: 1.87
 
-```{r fig-run-gap2, echo = FALSE, fig.cap= "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."}
-# label: "fig-run-gap2"
-# fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
-# out.width: "100%"
+```{r}
+#| label: "fig-run-gap2"
+#| fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
+#| out.width: "100%"
 
 knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/03_run_gap_manual.png?raw=true")
 ```
@@ -130,7 +131,7 @@ offensive player if the player is oriented away from the sideline. If players ar
 opposite directions the intuition is that they are trying to push the defense in opposite directions. 
 Again, gaps are categorized as left, right, or middle based on their position relative to the 
 outermost offensive linemen and the size of the gap is the distance between the two offensive 
-players forming it. @fig-run-gap shows a left gap between the sideline and player 1; a middle gap 
+players forming it. \@ref(fig:fig-run-gap) shows a left gap between the sideline and player 1; a middle gap 
 between players 4 and 5; and a right gap between player 9 and the sideline. 
 
 ```{r}
@@ -187,7 +188,7 @@ In addition to the spatial variables we consider the following contextual factor
 
 # Model
 
-We employed a boosted tree model to predict a play`s rush direction, using v-fold cross-validation 
+We employed a boosted tree model to predict a play\'s rush direction, using v-fold cross-validation 
 with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set 
 (weeks 7 – 9). To address the severe class imbalance in rush direction 
 (`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced 
@@ -196,7 +197,7 @@ dataset and mitigate overfitting.
 All variables discussed in [Spatial tracking variables] and [Other predictor variables] were 
 included in the model. See the [Appendix] for details on tuning specifications and optimal 
 parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, 
-as shown by the 830 plays predicted correct out of 1,955 plays in @fig-conf-mat.
+as shown by the 830 plays predicted correct out of 1,955 plays in \@ref(fig:fig-conf-mat).
 
 ```{r}
 #| label: "fig-conf-mat"
@@ -236,7 +237,7 @@ vi_table |>
              decimals = 4)
 ```
 
-@fig-rb-boxplot explores the relationship between the percentage of time the RB on the play 
+\@ref(fig:fig-rb-boxplot) explores the relationship between the percentage of time the RB on the play 
 rushed left, right, and middle in all prior games and the rush direction of the current play. 
 From the "RB historical left" plot, we observe that plays with a left rush direction tend to 
 feature RBs with a higher median percentage of historically rushing left.
@@ -260,7 +261,7 @@ knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/image
 ```
 
 Next we examine the relationship between the normalized size of sequential offensive player gaps 
-and rush direction, as shown in @fig-gap-boxplot. The "left gap size" plot illustrates the 
+and rush direction, as shown in \@ref(fig:fig-gap-boxplot). The "left gap size" plot illustrates the 
 distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left 
 tend to have a larger median gap size compared to plays with middle or right rush directions. 
 Similarly, larger middle gap sizes are associated with rushes through the middle, while larger 
