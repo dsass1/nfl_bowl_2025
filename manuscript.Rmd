@@ -42,11 +42,11 @@ In football, an offensive play typically involves either a pass or a rush. For a
 
 # Data
 
-To predict rush direction, we use tracking, play-by-play, player, and game data from the 2022 NFL season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data from the `nflverse` package (Carl et al., 2023). Our analysis focuses exclusively on rush plays, totaling 6,183 observations. Scramble plays, while typically categorized as rushes, were excluded since they originate as pass plays and involve decisions made after the snap. This aligns with our emphasis on leveraging pre-snap information.
+To predict rush direction, we use data from the 2022 NFL season, provided by the NFL Big Data Bowl 2025 (Lopez et al., 2024), along with supplementary data from the `nflverse` package (Carl et al., 2023). Our analysis focuses exclusively on rush plays, totaling 6,183 observations. Scramble plays, while typically categorized as rushes, were excluded since they originate as pass plays and involve decisions made after the snap. This aligns with our emphasis on leveraging pre-snap information.
 
 ## Rush direction
 
-Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the provided rush location types. Given the lack of detailed documentation on how rush direction was determined and to enhance prediction accuracy, we recalculated rush direction manually using the tracking data.
+Upon visualizing a sample of plays, we identified discrepancies between the tracking data and the provided rush location. Given the lack of detailed documentation on how rush direction was determined and to enhance prediction accuracy, we recalculated rush direction manually using the tracking data.
 
 At its simplest, rush direction is categorized as left, right, or middle, based on the ball carrier\'s path relative to the offensive linemen. Specifically, a rush is classified as:
 
@@ -67,11 +67,11 @@ In more complex scenarios where the ball carrier does not advance past the offen
 
 ## Spatial tracking variables
 
-Pre-snap data was used to build a predictive model. When rushing, a player looks for a gap or hole created by their teammates to run through. We aim to investigate whether pre-snap player orientation and positioning offers insights into potential gap formation, which could signal the rusher\'s intended direction.
+Pre-snap data was used to build a predictive model. When rushing, a player looks for a gap created by their teammates to run through. We aim to investigate whether pre-snap player orientation and positioning offers insights into potential gap formation, which could signal the rusher\'s intended direction.
 
 ### Sequential offensive player gap 
 
-Assuming the offensive and defensive players near the line of scrimmage are positioned one yard away from it, we project all players positions one yard forward in the direction of their orientation. This adjustment aligns all players along the line of scrimmage. 
+Assuming the offensive and defensive players near the line of scrimmage are positioned one yard away from it, we project all players positions forward in the direction of their orientation. This adjustment aligns all players along the line of scrimmage. 
 
 A gap is defined as an open space between two offensive players positioned consecutively, or between an offensive player and the sideline. Gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen. The size of a gap is calculated as the distance between the two offensive players forming it. 
 
@@ -92,11 +92,11 @@ knitr::include_graphics("images/03_run_gap.png")
 
 ### Orientation gap
 
-Now considering only the offensive players near the line of scrimmage, a gap is defined as an open space between two offensive players oriented away from each other, or if their is no neighboring offensive player if the player is oriented away from the sideline. If players are oriented in opposite directions the intuition is that they are trying to push the defense in opposite directions. Again, gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen and the size of the gap is the distance between the two offensive players forming it. Figure \@ref(fig:fig-run-gap) shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. 
+Now considering only the offensive players near the line of scrimmage, a gap is defined as an open space between two offensive players oriented away from each other, or if the outermost player is oriented away from the sideline. If players are oriented in opposite directions the intuition is that they are trying to push the defense in opposite directions. Again, gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen and the size of the gap is the distance between the two offensive players forming it. Figure \@ref(fig:fig-run-gap) shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. 
 
 ```{r}
 #| label: "fig-run-gap"
-#| fig-cap: "Orientation gaps for the play are highlighted in yellow, either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right."
+#| fig-cap: "Orientation gaps (in yellow) are either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right."
 #| fig.show: "hold"
 
 knitr::include_graphics("images/02_run_gap.png")
@@ -138,9 +138,9 @@ Additional spatial variables include the running back\'s (RB) and quarter back\'
 We also incorporate the RB\'s historical tendencies. For all games prior to the current week, we calculate the percentage of runs directed left, right, or middle by the RB. If multiple RBs participated in the play, we use the average of their tendencies. Similarly, we consider game-specific tendencies by calculating the percentage of runs to the left, right, and middle for all plays in the current game leading up to the play being analyzed.
 
 
-## Other predictor variables {#sec-other-var}
+## Other predictor variables
 
-In addition to the spatial variables we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.
+In addition we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.
 
 # Model
 

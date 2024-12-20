@@ -17,7 +17,7 @@ offering deeper insights into offensive tendencies.
 
 ## Results
 
-All results are reproducible my running the files in the `scripts` subdirectory.
+All results are reproducible by running the files in the `scripts` subdirectory.
 
 Prior to running the scripts download the large data files as described in the `data` subdirectory.
 
