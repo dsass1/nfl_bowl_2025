@@ -441,15 +441,13 @@ run_gap_1 <- ggplot() +
 print(run_gap_1)
 
 # use export it saves better
-ggsave("images/02_run_gap.png", 
-       run_gap_1,
-       width = 1116,
-       height = 327, 
-       units = "px",
-       dpi = 250
-       )
-
-#save(run_gap_1, file = "images/run_gap_1.rda")
+# ggsave("images/02_run_gap.png", 
+#        run_gap_1,
+#        width = 1116,
+#        height = 327, 
+#        units = "px",
+#        dpi = 250
+#        )
 
 run_gap_table <- tibble(
   player = 1:9,
@@ -655,10 +653,10 @@ run_gap_2 <- ggplot() +
 print(run_gap_2)
 
 # use export it saves better
-ggsave("images/03_run_gap.png", run_gap_2,
-       width = 1116, height=327,
-       units = "px", dpi = 250
-       )
+# ggsave("images/03_run_gap.png", run_gap_2,
+#        width = 1116, height=327,
+#        units = "px", dpi = 250
+#        )
 
 
 ### actual gap values
