@@ -119,7 +119,7 @@ player gap values for this play are as follows:
 # fig-cap: "Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them."
 # out.width: "100%"
 
-knitr::include_graphics("/kaggle/input/results/03_run_gap_manual.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/03_run_gap_manual.png?raw=true")
 ```
 
 ### Orientation gap
@@ -136,7 +136,7 @@ between players 4 and 5; and a right gap between player 9 and the sideline.
 ```{r}
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/02_run_gap_manual.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/02_run_gap_manual.png?raw=true")
 
 ```
 
@@ -255,7 +255,7 @@ accuracy.
 #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/04_rb_boxplot.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/04_rb_boxplot.png?raw=true")
 
 ```
 
@@ -272,7 +272,7 @@ relationship between spatial gap size and rush direction.
 #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
 #| out.width: "100%"
 
-knitr::include_graphics("../input/results/05_gap_boxplot.png")
+knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/05_gap_boxplot.png?raw=true")
 
 ```
 
