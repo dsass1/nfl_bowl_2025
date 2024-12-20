@@ -426,9 +426,9 @@ run_gap_1 <- ggplot() +
                   ylim = c(0.5, 1.5), 
                   expand = FALSE) +
   theme_minimal() +
-  labs(title = "Gaps defined by offensive player orientation at line set",
-       subtitle = "Players oriented away from each other form a gap"
-       ) +
+  #labs(title = "Gaps defined by offensive player orientation at line set",
+  #     subtitle = "Players oriented away from each other form a gap"
+  #     ) +
   theme(panel.background = element_rect(fill = "white"),
         legend.position = "none",
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
