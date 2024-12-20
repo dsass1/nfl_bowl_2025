@@ -70,9 +70,9 @@ At its simplest, rush direction is categorized as left, right, or middle, based 
 carrier`s 
 path relative to the offensive linemen. Specifically, a rush is classified as:
 
-    - `left`: if the ball carrier advances past the leftmost offensive lineman on the left,
-    - `right`: if they advance past the rightmost offensive lineman on the right,
-    - `middle`: if they advance between these two outside linemen.
+- `left`: if the ball carrier advances past the leftmost offensive lineman on the left,
+- `right`: if they advance past the rightmost offensive lineman on the right,
+- `middle`: if they advance between these two outside linemen.
 
 @fig-run illustrates a play where the ball carrier rushes to the left of the leftmost offensive lineman. However, the data provided misclassified this play as "inside-left," which corresponds to "middle" under this definition.
 
@@ -86,7 +86,7 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 ```
 
 <center>
-<img src = "../results/01_run_definition.gif" style ="width:100%">
+<img src = "../images/01_run_definition.gif" style ="width:100%">
 </center>
 
 In more complex scenarios where the ball carrier does not advance past the offensive linemen or 
