@@ -3,9 +3,7 @@ title: "Pre-Snap Advantage: Modeling Rush Direction in the NFL"
 author: "Danielle Sass"
 output:
   html_document:
-    self-contained: TRUE
-    number-sections: false
-    link-external-newwindow: true
+    self_contained: true
 ---
 
 ```{r}
@@ -79,6 +77,7 @@ path relative to the offensive linemen. Specifically, a rush is classified as:
 ```{r}
 #| label: "fig-run"
 #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen."
+#| out.width: 100%
 
 knitr::include_graphics("https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true")
 
