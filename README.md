@@ -17,16 +17,16 @@ offering deeper insights into offensive tendencies.
 
 ## Results
 
-All results are reproducible by running the files in the `scripts` subdirectory.
+All results are reproducible by running the files in the `scripts/` subdirectory.
 
-Prior to running the scripts download the large data files as described in the `data` subdirectory.
+Prior to running the scripts download the large data files as described in the `data/` subdirectory.
 
 ## References
 
 [Kaggle Notebook](https://www.kaggle.com/code/daniellesass/modeling-rush-direction-in-the-nfl)
 
-Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). 'nflverse'. [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
+Carl S, Baldwin B, Sharpe L, Ho T, Edwards J (2023). "nflverse". [https://nflverse.nflverse.com/](https://nflverse.nflverse.com/).
 
-Joash Fernandes C, et al., (2020), ‘Predicting Plays in the National Football League’. Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
+Joash Fernandes C, et al., (2020), "Predicting Plays in the National Football League". Journal of Sports Analytics 6: (1), 35 – 43. DOI: 0.3233/JSA-190348.
 
-Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), 'NFL Big Data Bowl 2025'. [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
+Lopez M, Bliss T, Blake A, Mooney P, and Howard A, (2024), "NFL Big Data Bowl 2025". [https://kaggle.com/competitions/nfl-big-data-bowl-2025](https://kaggle.com/competitions/nfl-big-data-bowl-2025), Kaggle.
