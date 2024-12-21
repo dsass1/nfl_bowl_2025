@@ -795,7 +795,7 @@ gap_boxplot
 ## table for plot
 rownames(run_gap_table) <- c("player", "orientation")
 
-run_gap_table |>
+gap_table <- run_gap_table |>
   gt(rownames_to_stub = T) |>
   fmt_number(rows = "player",
              decimals = 0) |>
@@ -820,3 +820,22 @@ run_gap_table |>
     heading.title.font.weight = "bold",
     heading.subtitle.font.size = 11
   )
+
+gtsave(gap_table, filename = "images/02_run_gap_table.png")
+
+
+## Confusion matrix
+predictions |> 
+  conf_mat(rush_loc_calc, .pred_class_main) |> 
+  autoplot(type = "heatmap")
+
+
+# VI table results
+table_vi <- vi_table |> 
+  select(variable = var_names, importance) |> 
+  gt() |> 
+  fmt_number(columns = "importance",
+             decimals = 4)
+
+
+gtsave(table_vi, filename = "images/vi_table.png")

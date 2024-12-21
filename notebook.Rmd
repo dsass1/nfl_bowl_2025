@@ -60,7 +60,7 @@ Figure 1 illustrates a play where the ball carrier rushes to the left of the lef
 <img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/01_run_definition.gif?raw=true" width="800"/>
 </center>
 <center>
-Figure 1. This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen.
+Figure 1: This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen.
 </center>
 
 <!-- ```{r} -->
@@ -82,7 +82,7 @@ Assuming the offensive and defensive players near the line of scrimmage are posi
 
 A gap is defined as an open space between two offensive players positioned consecutively, or between an offensive player and the sideline. Gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen. The size of a gap is calculated as the distance between the two offensive players forming it. 
 
-Figure \@ref(fig:fig-run-gap2) demonstrates a play with no left gaps, two middle gaps, and two right gaps. When multiple gaps exist within a region, the largest gap is selected. The sequential offensive player gap values for this play are as follows:
+Figure 2 demonstrates a play with no left gaps, two middle gaps, and two right gaps. When multiple gaps exist within a region, the largest gap is selected. The sequential offensive player gap values for this play are as follows:
  
   - `left`: 0
   - `right`: 21.34
@@ -101,12 +101,12 @@ Figure \@ref(fig:fig-run-gap2) demonstrates a play with no left gaps, two middle
 <img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/03_run_gap.png?raw=true" width="100%"/>
 </center>
 <center>
-Figure 2. Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them.
+Figure 2: Sequential offensive player gaps exist between players labeled 2 and 3, 4 and 5, 7 and 8, 9 and the sideline because no defenders are positioned between them.
 </center>
 
 ### Orientation gap
 
-Now considering only the offensive players near the line of scrimmage, a gap is defined as an open space between two offensive players oriented away from each other, or if the outermost player is oriented away from the sideline. If players are oriented in opposite directions the intuition is that they are trying to push the defense in opposite directions. Again, gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen and the size of the gap is the distance between the two offensive players forming it. Figure \@ref(fig:fig-run-gap) shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. 
+Now considering only the offensive players near the line of scrimmage, a gap is defined as an open space between two offensive players oriented away from each other, or if the outermost player is oriented away from the sideline. If players are oriented in opposite directions the intuition is that they are trying to push the defense in opposite directions. Again, gaps are categorized as left, right, or middle based on their position relative to the outermost offensive linemen and the size of the gap is the distance between the two offensive players forming it. Figure 3 shows a left gap between the sideline and player 1; a middle gap between players 4 and 5; and a right gap between player 9 and the sideline. 
 
 <!-- ```{r} -->
 <!-- #| label: "fig-run-gap" -->
@@ -150,10 +150,10 @@ Now considering only the offensive players near the line of scrimmage, a gap is 
 <img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/02_run_gap.png?raw=true" width="100%"/>
 </center>
 <center>
-<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/03_run_gap.png?raw=true" width="100%"/>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/02_run_gap_table.png?raw=true" width="100%"/>
 </center>
 <center>
-Figure 3. Orientation gaps (in yellow) are either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right.
+Figure 3: Orientation gaps (in yellow) are either between two offensive players or between an offensive player and the sideline. A negative orientation indicates the degree to which a player is angled to the left, while a positive orientation indicates the degree to which they are angled to the right.
 </center>
 
 
@@ -173,16 +173,23 @@ In addition we consider the following contextual factors: `quarter`, `down`, `ya
 
 We employed a boosted tree model to predict a play\'s rush direction, using v-fold cross-validation with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set (weeks 7 – 9). To address the severe class imbalance in rush direction (`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced dataset and mitigate overfitting.
 
-All variables discussed in [Spatial tracking variables] and [Other predictor variables] were included in the model. See the [Appendix] for details on tuning specifications and optimal parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, as shown by the 830 plays predicted correct out of 1,955 plays in Figure \@ref(fig:fig-conf-mat).
+All variables discussed in [Spatial tracking variables] and [Other predictor variables] were included in the model. See the [Appendix] for details on tuning specifications and optimal parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, as shown by the 830 plays predicted correct out of 1,955 plays in Figure 4.
 
-```{r}
-#| label: "fig-conf-mat"
-#| fig-cap: "Confusion matrix of prediction results."
-# Visualize confusion matrix
-predictions |> 
-  conf_mat(rush_loc_calc, .pred_class_main) |> 
-  autoplot(type = "heatmap")
-```
+<!-- ```{r} -->
+<!-- #| label: "fig-conf-mat" -->
+<!-- #| fig-cap: "Confusion matrix of prediction results." -->
+<!-- # Visualize confusion matrix -->
+<!-- predictions |>  -->
+<!--   conf_mat(rush_loc_calc, .pred_class_main) |>  -->
+<!--   autoplot(type = "heatmap") -->
+<!-- ``` -->
+
+<center>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/confusion_matrix.png?raw=true" width="60%"/>
+</center>
+<center>
+Figure 4: Confusion matrix of prediction results.
+</center>
 
 
 The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a naive strategy of always predicting "middle" could yield higher accuracy (`r accuracy_naive*100`%) due to the class imbalance, such an approach would provide no insights into variable importance. The accuracy of `r accuracy_main*100`% is certainly better than that naive approach on a balanced dataset (33.3%).
@@ -193,41 +200,64 @@ To evaluate whether the novel spatial tracking variables contribute meaningful i
 
 Including spatial tracking variables improves prediction accuracy by `r accuracy_main*100 - accuracy_base*100`%. To better understand the impact of these variables, we examine their importance as determined by the boosted tree model.
 
-```{r}
-#| label: "tbl-vi"
-#| tbl-cap: "Top 10 significant variables from the boosted tree model."
+<!-- ```{r} -->
+<!-- #| label: "tbl-vi" -->
+<!-- #| tbl-cap: "Top 10 significant variables from the boosted tree model." -->
 
-vi_table |> 
-  select(variable = var_names, importance) |> 
-  gt() |> 
-  fmt_number(columns = "importance",
-             decimals = 4)
-```
+<!-- vi_table |>  -->
+<!--   select(variable = var_names, importance) |>  -->
+<!--   gt() |>  -->
+<!--   fmt_number(columns = "importance", -->
+<!--              decimals = 4) -->
+<!-- ``` -->
 
-Figure \@ref(fig:fig-rb-boxplot) explores the relationship between the percentage of time the RB on the play rushed left, right, and middle in all prior games and the rush direction of the current play. From the "RB historical left" plot, we observe that plays with a left rush direction tend to feature RBs with a higher median percentage of historically rushing left.
+<center>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/vi_table.png?raw=true" width="60%"/>
+</center>
+<center>
+Table 1. Top 10 significant variables from the boosted tree model.
+</center>
+
+Figure 5 explores the relationship between the percentage of time the RB on the play rushed left, right, and middle in all prior games and the rush direction of the current play. From the "RB historical left" plot, we observe that plays with a left rush direction tend to feature RBs with a higher median percentage of historically rushing left.
 Similar trends are evident in the "RB historical right" and "RB historical middle" plots, where RBs with higher historical percentages in those directions are more likely to rush in the corresponding direction during the current play.
 
 This pattern aligns with intuition: in a football game, power rushers often run up the middle, while shifty rushers use their speed to exploit gaps on the outside. However, it is important to note that early-season games had little to no historical data due to being the first games of the season. Incorporating data from the prior season could potentially improve prediction accuracy.
 
-```{r}
-#| label: "fig-rb-boxplot"
-#| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
-#| out.width: "100%"
+<!-- ```{r} -->
+<!-- #| label: "fig-rb-boxplot" -->
+<!-- #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play." -->
+<!-- #| out.width: "100%" -->
 
-knitr::include_graphics("images/04_rb_boxplot.png")
+<!-- knitr::include_graphics("images/04_rb_boxplot.png") -->
 
-```
+<!-- ``` -->
 
-Next we examine the relationship between the normalized size of sequential offensive player gaps and rush direction, as shown in Figure \@ref(fig:fig-gap-boxplot). The "left gap size" plot illustrates the distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left tend to have a larger median gap size compared to plays with middle or right rush directions. Similarly, larger middle gap sizes are associated with rushes through the middle, while larger right gap sizes correspond to rushes to the right. These patterns indicate a weak but observable relationship between spatial gap size and rush direction.
 
-```{r}
-#| label: "fig-gap-boxplot"
-#| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play."
-#| out.width: "100%"
+<center>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/04_rb_boxplot.png?raw=true" width="60%"/>
+</center>
+<center>
+Figure 5: The boxplots show that a larger median gap size corresponds to the rush direction of the play.
+</center>
 
-knitr::include_graphics("images/05_gap_boxplot.png")
+Next we examine the relationship between the normalized size of sequential offensive player gaps and rush direction, as shown in Figure 6. The "left gap size" plot illustrates the distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left tend to have a larger median gap size compared to plays with middle or right rush directions. Similarly, larger middle gap sizes are associated with rushes through the middle, while larger right gap sizes correspond to rushes to the right. These patterns indicate a weak but observable relationship between spatial gap size and rush direction.
 
-```
+<!-- ```{r} -->
+<!-- #| label: "fig-gap-boxplot" -->
+<!-- #| fig-cap: "The boxplots show that a larger median gap size corresponds to the rush direction of the play." -->
+<!-- #| out.width: "100%" -->
+
+<!-- knitr::include_graphics("images/05_gap_boxplot.png") -->
+
+<!-- ``` -->
+
+
+<center>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/05_gap_boxplot.png?raw=true" width="60%"/>
+</center>
+<center>
+Figure 6: The boxplots show that a larger median gap size corresponds to the rush direction of the play.
+</center>
 
 # Discussion
 
