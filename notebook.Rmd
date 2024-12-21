@@ -63,6 +63,8 @@ Figure 1 illustrates a play where the ball carrier rushes to the left of the lef
 Figure 1: This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen.
 </center>
 
+<br>
+
 <!-- ```{r} -->
 <!-- #| label: "fig-run" -->
 <!-- #| fig.cap: "This play shows a direct snap to T. Etienne. T. Etienne rushes left of the outside linemen." -->
@@ -167,7 +169,7 @@ We also incorporate the RB\'s historical tendencies. For all games prior to the 
 
 ## Other predictor variables
 
-In addition we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data codebook.
+In addition we consider the following contextual factors: `quarter`, `down`, `yards to go`, `absolute yardline number`, `possession team`, `defensive team`, `offense formation`, `receiver alignment`, `play clock at snap`, `coverage`, `number of defenders in box`, `number or running backs`, `number of wide receivers`, and an indicator if the play was `no huddle`. For detailed descriptions of these variables, refer to the data [codebook](https://github.com/dsass1/nfl_bowl_2025/tree/main/data).
 
 # Model
 
@@ -191,6 +193,7 @@ All variables discussed in [Spatial tracking variables] and [Other predictor var
 Figure 4: Confusion matrix of prediction results.
 </center>
 
+<br>
 
 The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a naive strategy of always predicting "middle" could yield higher accuracy (`r accuracy_naive*100`%) due to the class imbalance, such an approach would provide no insights into variable importance. The accuracy of `r accuracy_main*100`% is certainly better than that naive approach on a balanced dataset (33.3%).
 
@@ -218,6 +221,8 @@ Including spatial tracking variables improves prediction accuracy by `r accuracy
 Table 1. Top 10 significant variables from the boosted tree model.
 </center>
 
+<br>
+
 Figure 5 explores the relationship between the percentage of time the RB on the play rushed left, right, and middle in all prior games and the rush direction of the current play. From the "RB historical left" plot, we observe that plays with a left rush direction tend to feature RBs with a higher median percentage of historically rushing left.
 Similar trends are evident in the "RB historical right" and "RB historical middle" plots, where RBs with higher historical percentages in those directions are more likely to rush in the corresponding direction during the current play.
 
@@ -232,13 +237,14 @@ This pattern aligns with intuition: in a football game, power rushers often run 
 
 <!-- ``` -->
 
-
 <center>
-<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/04_rb_boxplot.png?raw=true" width="60%"/>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/04_rb_boxplot.png?raw=true" width="100%"/>
 </center>
 <center>
 Figure 5: The boxplots show that a larger median gap size corresponds to the rush direction of the play.
 </center>
+
+<br>
 
 Next we examine the relationship between the normalized size of sequential offensive player gaps and rush direction, as shown in Figure 6. The "left gap size" plot illustrates the distribution of left gap sizes across all rush plays. Notably, plays where the rusher ran left tend to have a larger median gap size compared to plays with middle or right rush directions. Similarly, larger middle gap sizes are associated with rushes through the middle, while larger right gap sizes correspond to rushes to the right. These patterns indicate a weak but observable relationship between spatial gap size and rush direction.
 
@@ -253,7 +259,7 @@ Next we examine the relationship between the normalized size of sequential offen
 
 
 <center>
-<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/05_gap_boxplot.png?raw=true" width="60%"/>
+<img src="https://github.com/dsass1/nfl_bowl_2025/blob/main/images/05_gap_boxplot.png?raw=true" width="100%"/>
 </center>
 <center>
 Figure 6: The boxplots show that a larger median gap size corresponds to the rush direction of the play.
