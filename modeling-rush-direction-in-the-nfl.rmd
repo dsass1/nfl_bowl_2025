@@ -1,135 +1,14 @@
 {
  "cells": [
   {
-   "cell_type": "code",
-   "execution_count": 1,
-   "id": "98bcc81c",
-   "metadata": {
-    "_cell_guid": "a90b29b1-ea72-4eb2-8b8a-7bd83bc2a9f1",
-    "_kg_hide-input": true,
-    "_uuid": "35a2bb03-e24a-412a-8bb1-aadae2140422",
-    "collapsed": false,
-    "execution": {
-     "iopub.execute_input": "2024-12-21T23:38:20.678293Z",
-     "iopub.status.busy": "2024-12-21T23:38:20.676247Z",
-     "iopub.status.idle": "2024-12-21T23:38:24.485354Z",
-     "shell.execute_reply": "2024-12-21T23:38:24.483404Z"
-    },
-    "jupyter": {
-     "outputs_hidden": false
-    },
-    "papermill": {
-     "duration": 3.816983,
-     "end_time": "2024-12-21T23:38:24.488757",
-     "exception": false,
-     "start_time": "2024-12-21T23:38:20.671774",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "── \u001b[1mAttaching core tidyverse packages\u001b[22m ──────────────────────── tidyverse 2.0.0 ──\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mdplyr    \u001b[39m 1.1.4     \u001b[32m✔\u001b[39m \u001b[34mreadr    \u001b[39m 2.1.5\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mforcats  \u001b[39m 1.0.0     \u001b[32m✔\u001b[39m \u001b[34mstringr  \u001b[39m 1.5.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mggplot2  \u001b[39m 3.5.1     \u001b[32m✔\u001b[39m \u001b[34mtibble   \u001b[39m 3.2.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mlubridate\u001b[39m 1.9.3     \u001b[32m✔\u001b[39m \u001b[34mtidyr    \u001b[39m 1.3.1\n",
-      "\u001b[32m✔\u001b[39m \u001b[34mpurrr    \u001b[39m 1.0.2     \n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "── \u001b[1mConflicts\u001b[22m ────────────────────────────────────────── tidyverse_conflicts() ──\n",
-      "\u001b[31m✖\u001b[39m \u001b[34mdplyr\u001b[39m::\u001b[32mfilter()\u001b[39m masks \u001b[34mstats\u001b[39m::filter()\n",
-      "\u001b[31m✖\u001b[39m \u001b[34mdplyr\u001b[39m::\u001b[32mlag()\u001b[39m    masks \u001b[34mstats\u001b[39m::lag()\n",
-      "\u001b[36mℹ\u001b[39m Use the conflicted package (\u001b[3m\u001b[34m<http://conflicted.r-lib.org/>\u001b[39m\u001b[23m) to force all conflicts to become errors\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "Attaching package: ‘yardstick’\n",
-      "\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "The following object is masked from ‘package:readr’:\n",
-      "\n",
-      "    spec\n",
-      "\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\u001b[1mRows: \u001b[22m\u001b[34m2\u001b[39m \u001b[1mColumns: \u001b[22m\u001b[34m9\u001b[39m\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\u001b[36m──\u001b[39m \u001b[1mColumn specification\u001b[22m \u001b[36m────────────────────────────────────────────────────────\u001b[39m\n",
-      "\u001b[1mDelimiter:\u001b[22m \",\"\n",
-      "\u001b[32mdbl\u001b[39m (9): V1, V2, V3, V4, V5, V6, V7, V8, V9\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n",
-      "\u001b[36mℹ\u001b[39m Use `spec()` to retrieve the full column specification for this data.\n",
-      "\u001b[36mℹ\u001b[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.\n"
-     ]
-    }
-   ],
-   "source": [
-    "options(warn = -1)\n",
-    "knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)\n",
-    "\n",
-    "library(tidyverse)\n",
-    "library(yardstick)\n",
-    "\n",
-    "predictions <- read_rds(\"../input/results/predictions.rds\")\n",
-    "run_gap_table <- read_csv(\"../input/results/run_gap_table.csv\")\n",
-    "vi_table <- read_rds(\"../input/results/vi_table.rds\")\n",
-    "\n",
-    "accuracy_main <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_main) |> pull(.estimate) |> round(3)\n",
-    "\n",
-    "accuracy_base <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_base) |> pull(.estimate) |> round(3)\n",
-    "\n",
-    "accuracy_naive <- accuracy(predictions, \n",
-    "                          truth = rush_loc_calc,\n",
-    "                          estimate =.pred_class_naive) |> pull(.estimate) |> round(3)"
-   ]
-  },
-  {
    "cell_type": "markdown",
-   "id": "2cee1bc1",
+   "id": "039fb101",
    "metadata": {
     "papermill": {
-     "duration": 0.002139,
-     "end_time": "2024-12-21T23:38:24.493369",
+     "duration": 0.002224,
+     "end_time": "2024-12-21T23:44:34.703740",
      "exception": false,
-     "start_time": "2024-12-21T23:38:24.491230",
+     "start_time": "2024-12-21T23:44:34.701516",
      "status": "completed"
     },
     "tags": []
@@ -281,7 +160,7 @@
     "\n",
     "We employed a boosted tree model to predict a play\\'s rush direction, using v-fold cross-validation with 4 folds and 3 repeats. The data was split into a training set (weeks 1 – 6) and a testing set (weeks 7 – 9). To address the severe class imbalance in rush direction (`left`: 996; `right`: 1,133; `middle`: 2,099), we downsampled the training set to form a balanced dataset and mitigate overfitting.\n",
     "\n",
-    "All variables discussed in [Spatial tracking variables] and [Other predictor variables] were included in the model. See the [Appendix] for details on tuning specifications and optimal parameters chosen. Predictions on the test dataset achieved an accuracy of `r accuracy_main*100`%, as shown by the 830 plays predicted correct out of 1,955 plays in Figure 4.\n",
+    "All variables discussed in [Spatial tracking variables] and [Other predictor variables] were included in the model. See the [Appendix] for details on tuning specifications and optimal parameters chosen. Predictions on the test dataset achieved an accuracy of 42.5%, as shown by the 830 plays predicted correct out of 1,955 plays in Figure 4.\n",
     "\n",
     "<!-- ```{r} -->\n",
     "<!-- #| label: \"fig-conf-mat\" -->\n",
@@ -301,13 +180,13 @@
     "\n",
     "<br>\n",
     "\n",
-    "The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a naive strategy of always predicting \"middle\" could yield higher accuracy (`r accuracy_naive*100`%) due to the class imbalance, such an approach would provide no insights into variable importance. The accuracy of `r accuracy_main*100`% is certainly better than that naive approach on a balanced dataset (33.3%).\n",
+    "The low accuracy is unsurprising, as offenses are unlikely to telegraph their plays. While a naive strategy of always predicting \"middle\" could yield higher accuracy (48.6%) due to the class imbalance, such an approach would provide no insights into variable importance. The accuracy of 42.5% is certainly better than that naive approach on a balanced dataset (33.3%).\n",
     "\n",
-    "To evaluate whether the novel spatial tracking variables contribute meaningful insights into rush direction, we compared our model\\'s performance to a baseline model. The baseline model, also a tuned boosted tree, was built using only the variables described in [Other predictor variables]. Its accuracy on the testing set was `r accuracy_base*100`%.\n",
+    "To evaluate whether the novel spatial tracking variables contribute meaningful insights into rush direction, we compared our model\\'s performance to a baseline model. The baseline model, also a tuned boosted tree, was built using only the variables described in [Other predictor variables]. Its accuracy on the testing set was 38.0%.\n",
     "\n",
     "# Insights\n",
     "\n",
-    "Including spatial tracking variables improves prediction accuracy by `r accuracy_main*100 - accuracy_base*100`%. To better understand the impact of these variables, we examine their importance as determined by the boosted tree model.\n",
+    "Including spatial tracking variables improves prediction accuracy by 4.5%. To better understand the impact of these variables, we examine their importance as determined by the boosted tree model.\n",
     "\n",
     "<!-- ```{r} -->\n",
     "<!-- #| label: \"tbl-vi\" -->\n",
@@ -373,9 +252,9 @@
     "\n",
     "# Discussion\n",
     "\n",
-    "We utilized a boosted tree model to predict whether the rusher on a play runs to the left, right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables improved prediction accuracy over the baseline model by `r accuracy_main*100 - accuracy_base*100`%. We identified a very weak relationship between gap sizes and rush direction, we also found that a running back\\'s (RB\\'s) historical tendencies have a small, yet measurable, influence on the rush location.\n",
+    "We utilized a boosted tree model to predict whether the rusher on a play runs to the left, right, or middle of the offensive linemen. The inclusion of novel spatial tracking variables improved prediction accuracy over the baseline model by 4.5%. We identified a very weak relationship between gap sizes and rush direction, we also found that a running back\\'s (RB\\'s) historical tendencies have a small, yet measurable, influence on the rush location.\n",
     "\n",
-    "Establishing a strong run game is critical for an offense as it helps open up the passing game, wear down the defense, and control the clock. Conversely, limiting an opponent\\'s run game makes defensive play calling and execution easier. Although the overall model accuracy of `r accuracy_main*100`% is modest, the findings suggest that defenses should prepare for rushes in any direction and that post-snap developments may provide more actionable insights into rush direction.\n",
+    "Establishing a strong run game is critical for an offense as it helps open up the passing game, wear down the defense, and control the clock. Conversely, limiting an opponent\\'s run game makes defensive play calling and execution easier. Although the overall model accuracy of 42.5% is modest, the findings suggest that defenses should prepare for rushes in any direction and that post-snap developments may provide more actionable insights into rush direction.\n",
     "\n",
     "Future research could focus on using functional data to evaluate an RB\\'s effectiveness in rushing middle versus outside routes or on quantifying an offensive line\\'s impact through post-snap spatial gap sizes and their contributions to successful rushing plays.\n",
     "\n",
@@ -443,14 +322,14 @@
   },
   "papermill": {
    "default_parameters": {},
-   "duration": 7.14038,
-   "end_time": "2024-12-21T23:38:24.617654",
+   "duration": 3.477132,
+   "end_time": "2024-12-21T23:44:34.828866",
    "environment_variables": {},
    "exception": null,
    "input_path": "__notebook__.ipynb",
    "output_path": "__notebook__.ipynb",
    "parameters": {},
-   "start_time": "2024-12-21T23:38:17.477274",
+   "start_time": "2024-12-21T23:44:31.351734",
    "version": "2.6.0"
   }
  },
