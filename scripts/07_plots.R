@@ -426,9 +426,9 @@ run_gap_1 <- ggplot() +
                   ylim = c(0.5, 1.5), 
                   expand = FALSE) +
   theme_minimal() +
-  #labs(title = "Gaps defined by offensive player orientation at line set",
-  #     subtitle = "Players oriented away from each other form a gap"
-  #     ) +
+  labs(title = "Gaps defined by offensive player orientation at line set",
+       subtitle = "Players oriented away from each other form a gap"
+       ) +
   theme(panel.background = element_rect(fill = "white"),
         legend.position = "none",
         plot.subtitle = element_text(size = 11, face = "italic", hjust = 0.5),
@@ -792,3 +792,31 @@ train |>
 
 gap_boxplot
 
+## table for plot
+rownames(run_gap_table) <- c("player", "orientation")
+
+run_gap_table |>
+  gt(rownames_to_stub = T) |>
+  fmt_number(rows = "player",
+             decimals = 0) |>
+  fmt_number(rows = "orientation",
+             decimals = 2) |>
+  # tab_header(
+  #   title = "Gaps defined by offensive player orientation at line set",
+  #   subtitle = "Players oriented away from each other form a gap"
+  # ) |> 
+  tab_style(
+    style = list(
+      cell_fill(color = "#F0E442", alpha = 0.5),
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = c(2, 5, 6, 10)
+    )
+  ) |>
+  tab_options(
+    column_labels.hidden = TRUE,
+    heading.title.font.size = 12,
+    heading.title.font.weight = "bold",
+    heading.subtitle.font.size = 11
+  )
